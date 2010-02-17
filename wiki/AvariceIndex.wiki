@@ -1,5 +1,5 @@
 #labels Featured,Phase-Requirements,Phase-Design
-This is the wiki for Avarice-NM.
+This is the wiki for Avarice-NMS.
 
 = Introduction =
 
