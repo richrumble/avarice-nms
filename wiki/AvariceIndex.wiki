@@ -1,0 +1,11 @@
+#labels Featured,Phase-Requirements,Phase-Design
+This is the wiki for Avarice-NM.
+
+= Introduction =
+
+I will add my content here.
+
+
+= Details =
+
+I will add details here!
