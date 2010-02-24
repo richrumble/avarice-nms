@@ -137,6 +137,8 @@ if (($handle = fopen($file, "r")) !== FALSE) {
   $current_row       = 1;
   $batch_counter     = 1;
   while (($data = fgetcsv($handle)) !== FALSE) {
+    $mem_usage = memory_get_peak_usage(TRUE);
+    print $mem_usage . "\n";
     $number_of_fields = count($data);
     if ($current_row == 1) {
       for ($c=0; $c < $number_of_fields; $c++) {
