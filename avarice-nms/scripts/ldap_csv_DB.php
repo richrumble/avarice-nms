@@ -8,9 +8,11 @@ if (empty($argv[1]) or !is_file($argv[1])) {
   exit("You must provide a file to parse: php ldap_csv_DB \\path\\to\\file.csv\n");
 } else {
   $file = $argv[1];
+  $batchSizeSpec = $argv[2];
 };
 
 function ldap_to_db_structure($table_array, $avarice_admin_connection) {
+  $func_start_time = microtime_float();
   foreach ($table_array as $objectClass => $details) {
     if (empty($objectClass)) continue;
     $table_exists_result = dbquery_func($avarice_admin_connection, "SHOW TABLES LIKE '" . str_replace("-", "_", $objectClass) . "'");
@@ -67,9 +69,13 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       };
     };
   };
+  $func_end_time = microtime_float();
+  $func_time_taken = $func_end_time - $func_start_time;
+  return $func_time_taken;
 };
 
 function ldap_to_db_data($table_array, $avarice_admin_connection) {
+  $func_start_time = microtime_float();
   foreach ($table_array as $objectClass => $details) {
     if (empty($objectClass)) continue;
     $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace("-", "_", $objectClass));
@@ -113,8 +119,12 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
     unset($first_line_data_done);
     dbquery_func($avarice_admin_connection, $insert_query);
   };
+  $func_end_time = microtime_float();
+  $func_time_taken = $func_end_time - $func_start_time;
+  return $func_time_taken;
 };
 
+$dbtime = 0;
 if (($handle = fopen($file, "r")) !== FALSE) {
   $objectclass_array = array();
   $header_array      = array();
@@ -152,9 +162,9 @@ if (($handle = fopen($file, "r")) !== FALSE) {
         };
       };
     };
-    if ($batch_counter == 500) {
-      ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
-      ldap_to_db_data($objectclass_array, $avarice_admin_connection);
+    if ($batch_counter == $batchSizeSpec) {
+      $dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
+      $dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
       $objectclass_array = array();
       $batch_counter = 1;
     } else {
@@ -165,20 +175,17 @@ if (($handle = fopen($file, "r")) !== FALSE) {
   fclose($handle);
 };
 
-ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
-ldap_to_db_data($objectclass_array, $avarice_admin_connection);
-
-$parse_time = microtime_float();
-
-
+$dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
+$dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
 
 $end_time = microtime_float();
-$parse_time_taken = $parse_time - $start_time;
-$db_creation_time = $end_time - $parse_time;
+
 $total_time_taken = $end_time - $start_time;
+$parse_time_taken = $total_time_taken - $dbtime;
+
 print "CSV Parsed and DBs created\n";
 print "CSV file parsed in " . $parse_time_taken . " seconds\n";
-print "DB tables created and data entered in " . $db_creation_time . " seconds\n";
+print "DB tables created and data entered in " . $dbtime . " seconds\n";
 print "Total time taken: " . $total_time_taken . " seconds\n";
 print $current_row . "\n";
 
