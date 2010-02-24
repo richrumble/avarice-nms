@@ -129,15 +129,9 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
   return $func_time_taken;
 };
 
-$dbtime = 0;
 if (($handle = fopen($file, "r")) !== FALSE) {
-  $objectclass_array = array();
-  $header_array      = array();
-  $current_row       = 1;
-  $batch_counter     = 1;
+  $objectclass_array = array(); $header_array = array(); $current_row = 1; $batch_counter = 1; $dbtime = 0; $num_batches = 0;
   while (($data = fgetcsv($handle)) !== FALSE) {
-    $mem_usage = memory_get_usage();
-    print $mem_usage . "\n";
     $number_of_fields = count($data);
     if ($current_row == 1) {
       for ($c=0; $c < $number_of_fields; $c++) {
@@ -169,10 +163,11 @@ if (($handle = fopen($file, "r")) !== FALSE) {
         };
       };
     };
-    if ($batch_counter == $batchSizeSpec) {
+    if ($batch_counter == $batchSizeSpec or mem_get_usage() > 1800000) {
       $dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
       $dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
       $objectclass_array = array();
+      $num_batches++;
       $batch_counter = 1;
     } else {
       $batch_counter++;
@@ -184,6 +179,7 @@ if (($handle = fopen($file, "r")) !== FALSE) {
 
 $dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
 $dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
+$num_batches++;
 
 $end_time = microtime_float();
 
@@ -194,6 +190,8 @@ print "CSV Parsed and DBs created\n";
 print "CSV file parsed in " . $parse_time_taken . " seconds\n";
 print "DB tables created and data entered in " . $dbtime . " seconds\n";
 print "Total time taken: " . $total_time_taken . " seconds\n";
-print $current_row . "\n";
+print "Number of Rows: " . $current_row . "\n";
+print "Number of Batches: " . $num_batches . "\n";
+print "Size of Batches: " . $batchSizeSpec . "\n";
 
 ?>
