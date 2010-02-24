@@ -88,10 +88,8 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
     while ($row = mysql_fetch_assoc($column_list_result)) {
       $column_list[] = $row['Field'];
     };
-    
-    $data_chunks = array_chunk($details['data'], 100, TRUE);
+    $data_chunks = array_chunk($details['data'], 50, TRUE);
     foreach($data_chunks as $chunk) {
-      
       $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
       foreach ($column_list as $column) {
         if (!isset($first_insert_column)) {
@@ -128,8 +126,6 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
       unset($first_line_data_done);
       dbquery_func($avarice_admin_connection, $insert_query);
     };
-    
-    
   };
   $func_end_time = microtime_float();
   $func_time_taken = $func_end_time - $func_start_time;
