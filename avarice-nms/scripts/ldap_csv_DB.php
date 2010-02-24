@@ -163,7 +163,7 @@ if (($handle = fopen($file, "r")) !== FALSE) {
         };
       };
     };
-    if ($batch_counter == $batchSizeSpec or mem_get_usage() > 1800000) {
+    if ($batch_counter == $batchSizeSpec or memory_get_usage() > 1800000) {
       $dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
       $dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
       $objectclass_array = array();
