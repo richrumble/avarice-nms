@@ -11,6 +11,12 @@ if (empty($argv[1]) or !is_file($argv[1])) {
   $batchSizeSpec = $argv[2];
 };
 
+if (empty($argv[2]) or !is_numeric($argv[2])) {
+  $batchSizeSpec = $argv[2];
+} else {
+  $batchSizeSpec = 500;
+};
+
 function ldap_to_db_structure($table_array, $avarice_admin_connection) {
   $func_start_time = microtime_float();
   foreach ($table_array as $objectClass => $details) {
