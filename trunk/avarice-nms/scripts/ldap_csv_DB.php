@@ -8,10 +8,9 @@ if (empty($argv[1]) or !is_file($argv[1])) {
   exit("You must provide a file to parse: php ldap_csv_DB \\path\\to\\file.csv\n");
 } else {
   $file = $argv[1];
-  $batchSizeSpec = $argv[2];
 };
 
-if (empty($argv[2]) or !is_numeric($argv[2])) {
+if (!empty($argv[2]) and is_numeric($argv[2])) {
   $batchSizeSpec = $argv[2];
 } else {
   $batchSizeSpec = 500;
@@ -137,7 +136,7 @@ if (($handle = fopen($file, "r")) !== FALSE) {
   $current_row       = 1;
   $batch_counter     = 1;
   while (($data = fgetcsv($handle)) !== FALSE) {
-    $mem_usage = memory_get_peak_usage(TRUE);
+    $mem_usage = memory_get_usage();
     print $mem_usage . "\n";
     $number_of_fields = count($data);
     if ($current_row == 1) {
