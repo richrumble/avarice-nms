@@ -124,6 +124,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         unset($first_data_done);
       };
       unset($first_line_data_done);
+      print $insert_query . "\n\n";
       dbquery_func($avarice_admin_connection, $insert_query);
     };
   };
