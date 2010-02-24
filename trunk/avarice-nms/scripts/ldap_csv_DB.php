@@ -5,7 +5,7 @@ include_once("../include/config.php");
 $start_time = microtime_float();
 
 if (empty($argv[1]) or !is_file($argv[1])) {
-  exit("You must provide a file to parse: php csv.parse.php \\path\\to\\file.csv\n");
+  exit("You must provide a file to parse: php ldap_csv_DB \\path\\to\\file.csv\n");
 } else {
   $file = $argv[1];
 };
@@ -24,16 +24,20 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
         };
         $create_table_query .= "" . str_replace("-", "_", $key) . " ";
         if ($varray['is_numeric'] != 1) {
-          $create_table_query .= "VARCHAR";
+          if ($varray['length'] < 255) {
+            $create_table_query .= "VARCHAR( " . $varray['length'] . " )";
+          } else {
+            $create_table_query .= "LONGTEXT";
+          };
         } else {
           $create_table_query .= "INT";
         };
-        $create_table_query .= "( " . $varray['length'] . " ) NULL ";
+        $create_table_query .= " NULL ";
       };
       $create_table_query .= ") ENGINE = INNODB";
       dbquery_func($avarice_admin_connection, $create_table_query);
     } else {
-      $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace("-", "_", $objectClass), "on");
+      $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace("-", "_", $objectClass));
       $fields_exist_details = array();
       while ($field_row = mysql_fetch_assoc($field_list_result)) {
         $fields_exist_details[$field_row['Field']] = array("Type"    => $field_row['Type'],
@@ -68,14 +72,19 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
 function ldap_to_db_data($table_array, $avarice_admin_connection) {
   foreach ($table_array as $objectClass => $details) {
     if (empty($objectClass)) continue;
+    $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace("-", "_", $objectClass));
+    $column_list = array();
+    while ($row = mysql_fetch_assoc($column_list_result)) {
+      $column_list[] = $row['Field'];
+    };
     $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
-    foreach ($details['field_details'] as $column => $junk) {
+    foreach ($column_list as $column) {
       if (!isset($first_insert_column)) {
         $first_insert_column = "true";
       } else {
         $insert_query .= ", ";
       };
-      $insert_query .= str_replace("-", "_", $column);
+      $insert_query .= $column;
     };
     unset($first_insert_column);
     $insert_query .= ") VALUES ";
@@ -86,19 +95,23 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         $insert_query .= ", ";
       };
       $insert_query .= "(";
-      foreach ($data as $key => $value) {
+      foreach ($column_list as $column) {
         if (isset($first_data_done)) {
           $insert_query .= ", ";
         } else {
           $first_data_done = 1;
         };
-        $insert_query .= "\"" . addslashes($value) . "\"";
+        if (isset($data[$column])) {
+          $insert_query .= "\"" . addslashes($data[$column]) . "\"";
+        } else {
+          $insert_query .= "\"\"";
+        };
       };
       $insert_query .= ")";
       unset($first_data_done);
     };
     unset($first_line_data_done);
-    dbquery_func($avarice_admin_connection, $insert_query, "on");
+    dbquery_func($avarice_admin_connection, $insert_query);
   };
 };
 
