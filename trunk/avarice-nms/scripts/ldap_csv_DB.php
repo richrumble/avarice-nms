@@ -137,7 +137,8 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
             $insert_query .= $column;
           };
           unset($first_insert_column);
-          $insert_query .= ") VALUES (";
+          $insert_query .= ") VALUES ";
+          unset($first_line_data_done);
         };
       };
       $insert_query .= ")";
