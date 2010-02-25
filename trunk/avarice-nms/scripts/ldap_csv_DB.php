@@ -70,7 +70,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
           };
           $add_query .= "( " . $details['field_details'][$new_field]['length'] . " ) NULL";
         };
-        dbquery_func($avarice_admin_connection, $add_query);
+        dbquery_func($avarice_admin_connection, $add_query, "on");
       };
     };
   };
@@ -121,8 +121,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         if (strlen($insert_query) > 900000) {
           $insert_query .= ")";
           unset($first_data_done, $first_line_data_done);
-          print $insert_query . "\n\n";
-          dbquery_func($avarice_admin_connection, $insert_query);
+          dbquery_func($avarice_admin_connection, $insert_query, "on");
           $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
           foreach ($column_list as $column) {
             if (!isset($first_insert_column)) {
@@ -138,8 +137,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
       unset($first_data_done);
     };
     unset($first_line_data_done);
-    print $insert_query . "\n\n";
-    dbquery_func($avarice_admin_connection, $insert_query);
+    dbquery_func($avarice_admin_connection, $insert_query, "on");
   };
   $func_end_time = microtime_float();
   $func_time_taken = $func_end_time - $func_start_time;
