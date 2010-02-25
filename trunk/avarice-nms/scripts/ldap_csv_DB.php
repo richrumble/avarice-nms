@@ -20,16 +20,16 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
   $func_start_time = microtime_float();
   foreach ($table_array as $objectClass => $details) {
     if (empty($objectClass)) continue;
-    $table_exists_result = dbquery_func($avarice_admin_connection, "SHOW TABLES LIKE '" . str_replace("-", "_", $objectClass) . "'");
+    $table_exists_result = dbquery_func($avarice_admin_connection, "SHOW TABLES LIKE '" . str_replace(array("-", ";", "="), "_", $objectClass) . "'");
     if (mysql_num_rows($table_exists_result) == 0) {
-      $create_table_query = "CREATE TABLE avarice_nms." . str_replace("-", "_", $objectClass) . " (";
+      $create_table_query = "CREATE TABLE avarice_nms." . str_replace(array("-", ";", "="), "_", $objectClass) . " (";
       foreach ($details['field_details'] as $key => $varray) {
         if (isset(${$objectClass . "_first_column_done"})) {
           $create_table_query .= ", ";
         } else {
           ${$objectClass . "_first_column_done"} = 1;
         };
-        $create_table_query .= "" . str_replace("-", "_", $key) . " ";
+        $create_table_query .= "" . str_replace(array("-", ";", "="), "_", $key) . " ";
         if ($varray['is_numeric'] != 1) {
           if ($varray['length'] < 255) {
             $create_table_query .= "VARCHAR( " . $varray['length'] . " )";
@@ -44,7 +44,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       $create_table_query .= ") ENGINE = INNODB";
       dbquery_func($avarice_admin_connection, $create_table_query);
     } else {
-      $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace("-", "_", $objectClass));
+      $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace(array("-", ";", "="), "_", $objectClass));
       $fields_exist_details = array();
       while ($field_row = mysql_fetch_assoc($field_list_result)) {
         $fields_exist_details[$field_row['Field']] = array("Type"    => $field_row['Type'],
@@ -55,14 +55,14 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       };
       $additional_fields = array_diff_key($details['field_details'], $fields_exist_details);
       if (count($additional_fields) > 0) {
-        $add_query = "ALTER TABLE avarice_nms." . str_replace("-", "_", $objectClass) . " ";
+        $add_query = "ALTER TABLE avarice_nms." . str_replace(array("-", ";", "="), "_", $objectClass) . " ";
         foreach ($additional_fields as $new_field => $junk) {
           if (!isset($first_add)) {
             $first_add = "true";
           } else {
             $add_query .= ", ";
           };
-          $add_query .= "ADD `" . str_replace("-", "_", $new_field) . "` ";
+          $add_query .= "ADD `" . str_replace(array("-", ";", "="), "_", $new_field) . "` ";
           if ($details['field_details'][$new_field]['is_numeric'] != 1) {
             $add_query .= "VARCHAR";
           } else {
@@ -84,12 +84,12 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
   $func_start_time = microtime_float();
   foreach ($table_array as $objectClass => $details) {
     if (empty($objectClass)) continue;
-    $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace("-", "_", $objectClass));
+    $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . str_replace(array("-", ";", "="), "_", $objectClass));
     $column_list = array();
     while ($row = mysql_fetch_assoc($column_list_result)) {
       $column_list[] = $row['Field'];
     };
-    $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
+    $insert_query = "INSERT INTO avarice_nms." . str_replace(array("-", ";", "="), "_", $objectClass) . " (";
     foreach ($column_list as $column) {
       if (!isset($first_insert_column)) {
         $first_insert_column = "true";
@@ -122,7 +122,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
           $insert_query .= ")";
           unset($first_data_done, $first_line_data_done);
           dbquery_func($avarice_admin_connection, $insert_query, "on");
-          $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
+          $insert_query = "INSERT INTO avarice_nms." . str_replace(array("-", ";", "="), "_", $objectClass) . " (";
           foreach ($column_list as $column) {
             if (!isset($first_insert_column)) {
               $first_insert_column = "true";
@@ -132,7 +132,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
             $insert_query .= $column;
           };
           unset($first_insert_column);
-          $insert_query .= ") VALUES ";
+          $insert_query .= ") VALUES (";
         };
       };
       $insert_query .= ")";
@@ -167,14 +167,14 @@ if (($handle = fopen($file, "r")) !== FALSE) {
         if ($c != $oc_index and !empty($data[$c])) {
           $objectclass_array[$data[$oc_index]]['data'][${$data[$oc_index] . "_counter"}][$header_array[$c]] = $data[$c];
           if (!in_array($header_array[$c], $objectclass_array[$data[$oc_index]]['field_details'])) {
-            $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])] = array("is_numeric" => is_numeric($data[$c]),
+            $objectclass_array[$data[$oc_index]]['field_details'][str_replace(array("-", ";", "="), "_", $header_array[$c])] = array("is_numeric" => is_numeric($data[$c]),
                                                                                              "length"     => strlen($data[$c]));
           } else {
-            if (is_numeric($data[$c]) !== $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['is_numeric']) {
-              $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['is_numeric'] = "string";
+            if (is_numeric($data[$c]) !== $objectclass_array[$data[$oc_index]]['field_details'][str_replace(array("-", ";", "="), "_", $header_array[$c])]['is_numeric']) {
+              $objectclass_array[$data[$oc_index]]['field_details'][str_replace(array("-", ";", "="), "_", $header_array[$c])]['is_numeric'] = "string";
             };
-            if (strlen($data[$c]) > $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['length']) {
-              $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['length'] = strlen($data[$c]);
+            if (strlen($data[$c]) > $objectclass_array[$data[$oc_index]]['field_details'][str_replace(array("-", ";", "="), "_", $header_array[$c])]['length']) {
+              $objectclass_array[$data[$oc_index]]['field_details'][str_replace(array("-", ";", "="), "_", $header_array[$c])]['length'] = strlen($data[$c]);
             };
           };
         };
