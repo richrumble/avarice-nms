@@ -55,7 +55,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       };
       $additional_fields = array_diff_key($details['field_details'], $fields_exist_details);
       if (count($additional_fields) > 0) {
-        $add_query = "ALTER TABLE " . $objectClass . " ";
+        $add_query = "ALTER TABLE avarice_nms." . str_replace("-", "_", $objectClass) . " ";
         foreach ($additional_fields as $new_field => $junk) {
           if (!isset($first_add)) {
             $first_add = "true";
@@ -118,7 +118,6 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         } else {
           $insert_query .= "\"\"";
         };
-        
         if (strlen($insert_query) > 500000) {
           $insert_query .= ")";
           unset($first_data_done, $first_line_data_done);
@@ -132,6 +131,8 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
             };
             $insert_query .= $column;
           };
+          unset($first_insert_column);
+          $insert_query .= ") VALUES ";
         };
       };
       $insert_query .= ")";
