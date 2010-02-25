@@ -90,7 +90,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
     };
     $data_chunks = array_chunk($details['data'], 50, TRUE);
     foreach($data_chunks as $chunk) {
-      $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
+      $insert_query = "LOCK TABLES avarice_nms." . str_replace("-", "_", $objectClass) . " WRITE; INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
       foreach ($column_list as $column) {
         if (!isset($first_insert_column)) {
           $first_insert_column = "true";
@@ -124,6 +124,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         unset($first_data_done);
       };
       unset($first_line_data_done);
+      $insert_query .= "; UNLOCK TABLES;";
       print $insert_query . "\n\n";
       dbquery_func($avarice_admin_connection, $insert_query);
     };
