@@ -118,7 +118,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
           $insert_query .= "\"\"";
         };
         
-        if (strlen($insert_query) > 900000) {
+        if (strlen($insert_query) > 500000) {
           $insert_query .= ")";
           unset($first_data_done, $first_line_data_done);
           dbquery_func($avarice_admin_connection, $insert_query, "on");
