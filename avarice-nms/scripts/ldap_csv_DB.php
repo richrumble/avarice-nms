@@ -88,46 +88,57 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
     while ($row = mysql_fetch_assoc($column_list_result)) {
       $column_list[] = $row['Field'];
     };
-    $data_chunks = array_chunk($details['data'], 50, TRUE);
-    foreach($data_chunks as $chunk) {
-      $insert_query = "LOCK TABLES avarice_nms." . str_replace("-", "_", $objectClass) . " WRITE; INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
-      foreach ($column_list as $column) {
-        if (!isset($first_insert_column)) {
-          $first_insert_column = "true";
-        } else {
-          $insert_query .= ", ";
-        };
-        $insert_query .= $column;
+    $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
+    foreach ($column_list as $column) {
+      if (!isset($first_insert_column)) {
+        $first_insert_column = "true";
+      } else {
+        $insert_query .= ", ";
       };
-      unset($first_insert_column);
-      $insert_query .= ") VALUES ";
-      foreach ($chunk as $key => $data) {
-        if (!isset($first_line_data_done)) {
-          $first_line_data_done = "true";
-        } else {
-          $insert_query .= ", ";
-        };
-        $insert_query .= "(";
-        foreach ($column_list as $column) {
-          if (isset($first_data_done)) {
-            $insert_query .= ", ";
-          } else {
-            $first_data_done = 1;
-          };
-          if (isset($data[$column])) {
-            $insert_query .= "\"" . addslashes($data[$column]) . "\"";
-          } else {
-            $insert_query .= "\"\"";
-          };
-        };
-        $insert_query .= ")";
-        unset($first_data_done);
-      };
-      unset($first_line_data_done);
-      $insert_query .= "; UNLOCK TABLES;";
-      print $insert_query . "\n\n";
-      dbquery_func($avarice_admin_connection, $insert_query);
+      $insert_query .= $column;
     };
+    unset($first_insert_column);
+    $insert_query .= ") VALUES ";
+    foreach ($details['data'] as $key => $data) {
+      if (!isset($first_line_data_done)) {
+        $first_line_data_done = "true";
+      } else {
+        $insert_query .= ", ";
+      };
+      $insert_query .= "(";
+      foreach ($column_list as $column) {
+        if (isset($first_data_done)) {
+          $insert_query .= ", ";
+        } else {
+          $first_data_done = 1;
+        };
+        if (isset($data[$column])) {
+          $insert_query .= "\"" . addslashes($data[$column]) . "\"";
+        } else {
+          $insert_query .= "\"\"";
+        };
+        
+        if (strlen($insert_query) > 900000) {
+          $insert_query .= ")";
+          unset($first_data_done, $first_line_data_done);
+          dbquery_func($avarice_admin_connection, $insert_query);
+          $insert_query = "INSERT INTO avarice_nms." . str_replace("-", "_", $objectClass) . " (";
+          foreach ($column_list as $column) {
+            if (!isset($first_insert_column)) {
+              $first_insert_column = "true";
+            } else {
+              $insert_query .= ", ";
+            };
+            $insert_query .= $column;
+          };
+        };
+      };
+      $insert_query .= ")";
+      unset($first_data_done);
+    };
+    unset($first_line_data_done);
+    print $insert_query . "\n\n";
+    dbquery_func($avarice_admin_connection, $insert_query);
   };
   $func_end_time = microtime_float();
   $func_time_taken = $func_end_time - $func_start_time;
