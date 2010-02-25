@@ -71,6 +71,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
           $add_query .= "( " . $details['field_details'][$new_field]['length'] . " ) NULL";
         };
         dbquery_func($avarice_admin_connection, $add_query, "on");
+        unset($first_add);
       };
     };
   };
@@ -165,14 +166,14 @@ if (($handle = fopen($file, "r")) !== FALSE) {
         if ($c != $oc_index and !empty($data[$c])) {
           $objectclass_array[$data[$oc_index]]['data'][${$data[$oc_index] . "_counter"}][$header_array[$c]] = $data[$c];
           if (!in_array($header_array[$c], $objectclass_array[$data[$oc_index]]['field_details'])) {
-            $objectclass_array[$data[$oc_index]]['field_details'][$header_array[$c]] = array("is_numeric" => is_numeric($data[$c]),
+            $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])] = array("is_numeric" => is_numeric($data[$c]),
                                                                                              "length"     => strlen($data[$c]));
           } else {
-            if (is_numeric($data[$c]) !== $objectclass_array[$data[$oc_index]]['field_details'][$header_array[$c]]['is_numeric']) {
-              $objectclass_array[$data[$oc_index]]['field_details'][$header_array[$c]]['is_numeric'] = "string";
+            if (is_numeric($data[$c]) !== $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['is_numeric']) {
+              $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['is_numeric'] = "string";
             };
-            if (strlen($data[$c]) > $objectclass_array[$data[$oc_index]]['field_details'][$header_array[$c]]['length']) {
-              $objectclass_array[$data[$oc_index]]['field_details'][$header_array[$c]]['length'] = strlen($data[$c]);
+            if (strlen($data[$c]) > $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['length']) {
+              $objectclass_array[$data[$oc_index]]['field_details'][str_replace("-", "_", $header_array[$c])]['length'] = strlen($data[$c]);
             };
           };
         };
