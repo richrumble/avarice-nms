@@ -123,26 +123,28 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         } else {
           $insert_query .= "\"\"";
         };
-        if (strlen($insert_query) > 500000) {
-          $insert_query .= ")";
-          unset($first_data_done, $first_line_data_done);
-          dbquery_func($avarice_admin_connection, $insert_query, "on");
-          $insert_query = "INSERT INTO avarice_nms." . charreplace($objectClass) . " (";
-          foreach ($column_list as $column) {
-            if (!isset($first_insert_column)) {
-              $first_insert_column = "true";
-            } else {
-              $insert_query .= ", ";
-            };
-            $insert_query .= $column;
-          };
-          unset($first_insert_column);
-          $insert_query .= ") VALUES ";
-          unset($first_line_data_done);
-        };
       };
       $insert_query .= ")";
       unset($first_data_done);
+
+      if (strlen($insert_query) > 500000) {
+        $insert_query .= ")";
+        unset($first_data_done, $first_line_data_done);
+        dbquery_func($avarice_admin_connection, $insert_query, "on");
+        $insert_query = "INSERT INTO avarice_nms." . charreplace($objectClass) . " (";
+        foreach ($column_list as $column) {
+          if (!isset($first_insert_column)) {
+            $first_insert_column = "true";
+          } else {
+            $insert_query .= ", ";
+          };
+          $insert_query .= $column;
+        };
+        unset($first_insert_column);
+        $insert_query .= ") VALUES ";
+        unset($first_line_data_done);
+      };
+
     };
     unset($first_line_data_done);
     dbquery_func($avarice_admin_connection, $insert_query, "on");
