@@ -27,14 +27,9 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
     if (empty($objectClass)) continue;
     $table_exists_result = dbquery_func($avarice_admin_connection, "SHOW TABLES LIKE '" . charreplace($objectClass) . "'");
     if (mysql_num_rows($table_exists_result) == 0) {
-      $create_table_query = "CREATE TABLE avarice_nms." . charreplace($objectClass) . " (";
+      $create_table_query = "CREATE TABLE avarice_nms." . charreplace($objectClass) . " (" . charreplace($objectClass) . "_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY";
       foreach ($details['field_details'] as $key => $varray) {
-        if (isset(${$objectClass . "_first_column_done"})) {
-          $create_table_query .= ", ";
-        } else {
-          ${$objectClass . "_first_column_done"} = 1;
-        };
-        $create_table_query .= "" . charreplace($key) . " ";
+        $create_table_query .= ", " . charreplace($key) . " ";
         if ($varray['is_numeric'] != 1) {
           if ($varray['length'] < 255) {
             $create_table_query .= "VARCHAR( " . $varray['length'] . " )";
@@ -46,17 +41,26 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
         };
         $create_table_query .= " NULL ";
       };
+      if (array_key_exists("DN", $details['field_details'])) {
+        if ($details['field_details']["DN"]['length'] < 255) {
+          $create_table_query .= ", UNIQUE (DN)";
+        };
+      };
       $create_table_query .= ") ENGINE = INNODB";
-      dbquery_func($avarice_admin_connection, $create_table_query);
+      dbquery_func($avarice_admin_connection, $create_table_query, "on");
     } else {
       $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . charreplace($objectClass));
       $fields_exist_details = array();
       while ($field_row = mysql_fetch_assoc($field_list_result)) {
-        $fields_exist_details[$field_row['Field']] = array("Type"    => $field_row['Type'],
-                                                           "Null"    => $field_row['Null'],
-                                                           "Key"     => $field_row['Key'],
-                                                           "Default" => $field_row['Default'],
-                                                           "Extra"   => $field_row['Extra']);
+        if (isset($first_field_row_done)) {
+          $fields_exist_details[$field_row['Field']] = array("Type"    => $field_row['Type'],
+                                                             "Null"    => $field_row['Null'],
+                                                             "Key"     => $field_row['Key'],
+                                                             "Default" => $field_row['Default'],
+                                                             "Extra"   => $field_row['Extra']);
+        } else {
+          $first_field_row_done = "true";
+        };
       };
       $additional_fields = array_diff_key($details['field_details'], $fields_exist_details);
       if (count($additional_fields) > 0) {
@@ -92,7 +96,11 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
     $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . charreplace($objectClass));
     $column_list = array();
     while ($row = mysql_fetch_assoc($column_list_result)) {
-      $column_list[] = $row['Field'];
+      if (isset($first_field_row_done)) {
+        $column_list[] = $row['Field'];
+      } else {
+        $first_field_row_done = "true";
+      };
     };
     $insert_query = "INSERT INTO avarice_nms." . charreplace($objectClass) . " (";
     foreach ($column_list as $column) {
@@ -126,9 +134,18 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
       };
       $insert_query .= ")";
       unset($first_data_done);
-
       if (strlen($insert_query) > 500000) {
         unset($first_line_data_done);
+        $insert_query .= " ON DUPLICATE KEY UPDATE ";
+        foreach ($column_list as $column) {
+          if (!isset($first_insert_column)) {
+            $first_insert_column = "true";
+          } else {
+            $insert_query .= ", ";
+          };
+          $insert_query .= $column . "=VALUES(" . $column . ")";
+        };
+        unset($first_insert_column);
         dbquery_func($avarice_admin_connection, $insert_query, "on");
         $insert_query = "INSERT INTO avarice_nms." . charreplace($objectClass) . " (";
         foreach ($column_list as $column) {
@@ -143,9 +160,18 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         $insert_query .= ") VALUES ";
         unset($first_line_data_done);
       };
-
     };
     unset($first_line_data_done);
+    $insert_query .= " ON DUPLICATE KEY UPDATE ";
+    foreach ($column_list as $column) {
+      if (!isset($first_insert_column)) {
+        $first_insert_column = "true";
+      } else {
+        $insert_query .= ", ";
+      };
+      $insert_query .= $column . "=VALUES(" . $column . ")";
+    };
+    unset($first_insert_column);
     dbquery_func($avarice_admin_connection, $insert_query, "on");
   };
   $func_end_time = microtime_float();
