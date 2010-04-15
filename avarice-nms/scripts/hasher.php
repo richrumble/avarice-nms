@@ -32,7 +32,7 @@ function dircrawl($dir, $hash_array, $extension_exclusions) {
             foreach ($hash_array as $hash_type) {
               $hash_output .= ",\"" . hash_file($hash_type, $dir . "\\"  . $file) . "\"";
             };
-            $return .= "\"" . dirname($dir . "\\"  . $file) . "\",\"" . basename($dir . "\\"  . $file) . "\"" . $hash_output . "\n";
+            $return .= "\"" . dirname($dir . "\\"  . $file) . "\",\"" . basename($dir . "\\"  . $file) . "\",\"" . filesize($dir . "\\"  . $file) . "\"" . $hash_output . "\n";
           };
         };
       };
@@ -76,7 +76,7 @@ if (empty($hash_array)) {
                       "sha256");
 };
 
-$output = "\"Path\",\"FileName\"";
+$output = "\"Path\",\"FileName\",\"Size\"";
 foreach ($hash_array as $hash_type) {
   $output .= ",\"" . $hash_type . "\"";
 };
@@ -87,7 +87,7 @@ if (is_file($path)) {
   foreach ($hash_array as $hash_type) {
     $hash_output .= ",\"" . hash_file($hash_type, $path) . "\"";
   };
-  $output .= "\"" . dirname($path) . "\",\"" . basename($path) . "\"" . $hash_output . "\n";
+  $output .= "\"" . dirname($path) . "\",\"" . basename($path) . "\",\"" . filesize($path) . "\"" . $hash_output . "\n";
 } else if (is_dir($path)) {
   $output .= dircrawl($path, $hash_array, $extension_exclusions);
 } else {
