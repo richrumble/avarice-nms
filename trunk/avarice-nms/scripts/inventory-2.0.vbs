@@ -391,7 +391,7 @@ Sub CPUInformation(objWmi, objXml)
 End Sub
 
 '
-' =================  CPU (Win32_Processor)  =================
+' =================  Hardware Error (Win32_PNPEntity)  =================
 '
 
 Sub HWErrorInformation(objWmi, objXml)
