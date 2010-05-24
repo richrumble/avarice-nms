@@ -1,15 +1,16 @@
-' A script to generate an XML formatted inventory
+' A script to generate an XML formatted inventory 
 '
 ' Author:  Chris Dent
 ' Webpage: www.indented.co.uk
 ' Date:    18/05/2010
 '
 ' Change Log:
-' * (19/05/2010) Rich Rumble  :   Added END seperations
-' * (21/05/2010) Chris Dent   :   Switched END to block comments before each section :)
-' * (21/05/2010) Chris Dent   :   Added ProgramInformation to read from Uninstall key
-' * (21/05/2010) Chris Dent   :   Added automatic conversion from "localhost" to "." for connections only.
-' * (21/05/2010) Chris dent   :   Added IIS query set
+' * (19/05/2010) richrumble : Added END seperations - richrumble
+' * (21/05/2010) Chris Dent : Switched END to block comments before each section :)
+' * (21/05/2010) Chris Dent : Added ProgramInformation to read from Uninstall key
+' * (21/05/2010) Chris Dent : Added automatic conversion from "localhost" to "." for connections only
+' * (21/05/2010) Chris Dent : Added IIS query set
+' * (24/05/2010) Chris Dent : Added test for Domain Controllers to Local User and Local Group checks
 
 Option Explicit
 
@@ -32,8 +33,7 @@ Const HKEY_LOCAL_MACHINE = &H80000002
 '
 
 Dim arrComputers
-Dim strUsername, strPassword
-Dim strFileName
+Dim strUsername, strPassword, strFileName
 Dim objTests : Set objTests = CreateObject("Scripting.Dictionary")
 
 '
@@ -50,7 +50,7 @@ Sub SortArgs
 
   If strFileName = "" Then strFileName = "Default.xml"
 
-  Dim strTests : strTests = "hd,pc,bios,vid,mem,nic,cpu,hwerr,os,srvc,av,fw,ie,grp,usr,qfe,prog,apppool,ftp,smtp,web"
+  Dim strTests : strTests = "hd,bios,pc,vid,mem,nic,cpu,hwerr,os,srvc,av,fw,ie,grp,usr,qfe,prog,apppool,ftp,smtp,web"
   If objArgs.Named("c") <> "" Then strTests = objArgs.Named("c")
 
   Dim strTest
@@ -82,7 +82,7 @@ Class XmlWriter
 
   '
   ' Public Methods
-  '
+  ' 
 
   Public Sub Save(strFileName)
     objXml.Save(strFileName)
@@ -142,7 +142,7 @@ Function ConnectWmi(objErrXml, strComputer, strNamespace, strUsername, strPasswo
     Set objWmi = GetObject("winmgmts:\\" & strComputer & "\" & strNamespace)
   End If
 
-   If Err.Number <> 0 Then
+  If Err.Number <> 0 Then
     objErrXml.OpenChild "ErrorRecord"
     objErrXml.AddNode "Username", strUsername
     objErrXml.AddNode "Namespace", strNamespace
@@ -150,7 +150,7 @@ Function ConnectWmi(objErrXml, strComputer, strNamespace, strUsername, strPasswo
     objErrXml.CloseChild()
   End If
 
- objWmi.Security_.authenticationLevel = WbemAuthenticationLevelPktPrivacy
+  objWmi.Security_.authenticationLevel = WbemAuthenticationLevelPktPrivacy
 
   Set ConnectWmi = objWmi
   On Error Goto 0
@@ -164,7 +164,7 @@ Sub WmiToXml(objWmi, objXml, strNodeName, strClass, arrProperties, strFilter)
 
   Dim strWql
   strWql = "SELECT * FROM " & strClass
-
+ 
   If strFilter <> "" Then strWql = strWql & " WHERE " & strFilter
 
   On Error Resume Next
@@ -210,7 +210,7 @@ Sub WmiToXml(objWmi, objXml, strNodeName, strClass, arrProperties, strFilter)
               objXml.AddNode objProperty.Name, Join(objProperty.Value, " ")
 
             End If
-
+  
           Else
 
             objXml.AddNode objProperty.Name, Trim(objProperty.Value)
@@ -237,6 +237,30 @@ Function ToDateTime(strDmtfDate)
 
   ToDateTime = objSWbemDateTime.GetVarDate(False)
 End Function
+
+
+'
+' ==================  IsDomainController ====================
+'  Uses Win32_ComputerSystem to determine whether or not the 
+'           connected system is a Domain Controller
+'
+
+Function IsDomainController(objWmi)
+
+  Dim colItems : Set colItems = objWmi.ExecQuery("SELECT DomainRole FROM Win32_ComputerSystem",, 48)
+  Dim objItem
+
+  Dim booIsDomainController : booIsDomainController = False
+
+  For Each objItem in colItems
+    If objItem.DomainRole = 4 Or objItem.DomainRole = 5 Then
+      booIsDomainController = True
+    End If
+  Next
+
+   IsDomainController = booIsDomainController
+End Function
+
 
 '
 ' ===============  Wmi: root\cimv2 Namespace ================
@@ -299,7 +323,7 @@ Sub OSInformation(objWmi, objXml)
     "RegisteredUser", "SerialNumber", "ServicePackMajorVersion", "ServicePackMinorVersion", _
     "CurrentTimeZone", "TotalVirtualMemorySize", "TotalVisibleMemorySize", "Version")
 
-  WmiToXml objWmi, objXml, "OperatingSystem", "Win32_OperatingSystem", arrProperties, ""
+  WmiToXml objWmi, objXml, "OperatingSystem", "Win32_OperatingSystem", arrProperties, ""  
 
 End Sub
 
@@ -367,7 +391,7 @@ Sub CPUInformation(objWmi, objXml)
 End Sub
 
 '
-' =================  Hardware  (Win32_PNPEntity)  =================
+' =================  CPU (Win32_Processor)  =================
 '
 
 Sub HWErrorInformation(objWmi, objXml)
@@ -406,16 +430,19 @@ End Sub
 
 Sub UserInformation(objWmi, objXml)
 
-  objXml.OpenChild "LocalUsers"
+  If IsDomainController(objWmi) = False Then
 
-  Dim arrProperties : arrProperties = Array("AccountType", "Caption", "Description", _
-    "Disabled", "Domain", "FullName", "Lockout", "Name", "PasswordChangeable", _
-    "PasswordExpires", "PasswordRequired", "SID", "SIDType", "Status")
+    objXml.OpenChild "LocalUsers"
 
-  WmiToXml objWmi, objXml, "User", "Win32_UserAccount", arrProperties, "LocalAccount=True"
+    Dim arrProperties : arrProperties = Array("AccountType", "Caption", "Description", _
+      "Disabled", "Domain", "FullName", "Lockout", "Name", "PasswordChangeable", _
+      "PasswordExpires", "PasswordRequired", "SID", "SIDType", "Status")
 
-  objXml.CloseChild()
+    WmiToXml objWmi, objXml, "User", "Win32_UserAccount", arrProperties, "LocalAccount=True"
 
+    objXml.CloseChild()
+
+  End If
 End Sub
 
 '
@@ -447,7 +474,7 @@ End Sub
 Sub NetworkInformation(objWmi_Cimv2, objWmi_RootWmi, objXml)
 
   objXml.OpenChild "Network"
-  On Error Resume Next
+
   Dim colItems : Set colItems = objWmi_Cimv2.ExecQuery("SELECT * FROM " & _
     "Win32_NetworkAdapterConfiguration WHERE IPEnabled=True",, 48)
 
@@ -519,8 +546,8 @@ Sub ProgramInformation(objWmi, objXml)
   Dim strKeyPath : strKeyPath = "Software\Microsoft\Windows\CurrentVersion\Uninstall"
 
   Dim arrSubKeys
-  objWmi.EnumKey HKEY_LOCAL_MACHINE, strKeyPath, arrSubKeys
-
+  objWmi.EnumKey HKEY_LOCAL_MACHINE, strKeyPath, arrSubKeys  
+  
   Dim strSubKey
   For Each strSubKey in arrSubKeys
 
@@ -545,7 +572,7 @@ Sub ProgramInformation(objWmi, objXml)
         Next
 
         objXml.CloseChild()
-
+ 
       End If
     End If
 
@@ -649,43 +676,53 @@ Sub GroupInformation(objXml, strComputer, strUsername, strPassword)
 
   If Not objComputer Is Nothing Then
 
-    objXml.OpenChild "LocalGroups"
-
-    objComputer.Filter = Array("group")
-
     Dim objGroup
-    For Each objGroup in objComputer
-      objXml.OpenChild "Group"
 
-      objXml.AddNode "Name", objGroup.Name
+    On Error Resume Next
+    Set objGroup = GetObject("WinNT://" & strComputer & "/Domain Admins")
+    ' This will throw an error if the current system is not a Domain Controller.
+    ' This section will not execute for Domain Controllers.
+    If Err.Number <> 0 Then
+      On Error Goto 0
 
-      objXml.OpenChild "Members"
+      objXml.OpenChild "LocalGroups"
 
-      Dim objMember
-      For Each objMember in objGroup.Members
-        objXml.OpenChild "Member"
+      objComputer.Filter = Array("group")
 
-        objXml.AddNode "Name",    objMember.Name
-        objXml.AddNode "AdsPath", objMember.AdsPath
-        objXml.AddNode "Class",   objMember.Class
+      For Each objGroup in objComputer
+        objXml.OpenChild "Group"
 
-        Dim strScope : strScope = "Local"
-        If UBound(Split(objMember.ADSPath, "/")) = 3 And _
-            InStr(objMember.ADSPath, "NT AUTHORITY") = 0 And _
-            InStr(objMember.ADSPath, "NT SERVICE") = 0 Then
+        objXml.AddNode "Name", objGroup.Name
 
-          strScope = "Domain"
-        End If
-        objXml.AddNode "Scope",   strScope
+        objXml.OpenChild "Members"
 
-        objXml.CloseChild() ' Member
+        Dim objMember
+        For Each objMember in objGroup.Members
+          objXml.OpenChild "Member"
+
+          objXml.AddNode "Name",    objMember.Name
+          objXml.AddNode "AdsPath", objMember.AdsPath
+          objXml.AddNode "Class",   objMember.Class
+
+          Dim strScope : strScope = "Local"
+          If UBound(Split(objMember.ADSPath, "/")) = 3 And _
+              InStr(objMember.ADSPath, "NT AUTHORITY") = 0 And _
+              InStr(objMember.ADSPath, "NT SERVICE") = 0 Then
+
+            strScope = "Domain"
+          End If
+          objXml.AddNode "Scope",   strScope
+
+          objXml.CloseChild() ' Member
+        Next
+
+        objXml.CloseChild() ' Members
+        objXml.CloseChild() ' Group
       Next
-
-      objXml.CloseChild() ' Members
-      objXml.CloseChild() ' Group
-    Next
-    objXml.CloseChild() ' LocalGroups
-  End If
+      objXml.CloseChild() ' LocalGroups
+    End If
+    On Error Goto 0
+  End If  
 End Sub
 
 '
@@ -819,9 +856,10 @@ For Each strComputer in arrComputers
 
     If Not objWmi Is Nothing Then
 
+
       If objTests.Exists("hd") Then    HDInformation       objWmi, objXml
-      If objTests.Exists("pc") Then    ComputerInformation objWmi, objXml
       If objTests.Exists("os") Then    OSInformation       objWmi, objXml
+      If objTests.Exists("pc") Then    ComputerInformation objWmi, objXml
       If objTests.Exists("bios") Then  BIOSInformation     objWmi, objXml
       If objTests.Exists("vid") Then   VideoInformation    objWmi, objXml
       If objTests.Exists("mem") Then   MemoryInformation   objWmi, objXml
@@ -857,7 +895,7 @@ For Each strComputer in arrComputers
       End If
 
     End If
-
+   
     '
     ' Classes from root\SecurityCenter
     '
@@ -880,7 +918,7 @@ For Each strComputer in arrComputers
       On Error Resume Next
       Set objWmi_MSIE = ConnectWmi(objErrXml, strComputer, "root\cimv2\Applications\MicrosoftIE", strUsername, strPassword)
       On Error Goto 0
-
+  
       If Not objWmi_MSIE Is Nothing Then
         MSIEInformation objWmi_MSIE, objXml
       End If
@@ -917,7 +955,7 @@ For Each strComputer in arrComputers
     objErrXml.CloseChild()
 
   End If
-
+  
   '
   ' Cleanup connections
   '
@@ -942,9 +980,10 @@ objXml.CloseChild() ' Root Element
 
 objXml.Save(strFileName)
 
+Dim strErrFileName : strErrFileName = "Err-" & strFileName
 If InStr(strFileName, "\") > 0 Then
   Dim strTemp : strTemp = Mid(strFileName,  1, InStrRev(strFileName, "\"))
-  strFileName = strTemp & "Err-" & Replace(strFileName, strTemp, "")
+  strErrFileName = strTemp & "Err-" & Replace(strFileName, strTemp, "")
 End If
 
-objErrXml.Save(strFileName)
+objErrXml.Save(strErrFileName)
