@@ -1,6 +1,7 @@
 <?php
 
 $avarice_user_connection   = array("db_type"  => "mysql",
+                                   //"db_host"  => "10.10.251.58",
                                    "db_host"  => "localhost",
                                    "db_port"  => "3306",
                                    "db_name"  => "avarice_nms",
@@ -8,6 +9,7 @@ $avarice_user_connection   = array("db_type"  => "mysql",
                                    "password" => "We8AcQTvDXwqJsmz");
 
 $avarice_admin_connection = array("db_type"  => "mysql",
+                                  //"db_host"  => "10.10.251.58",
                                   "db_host"  => "localhost",
                                   "db_port"  => "3306",
                                   "db_name"  => "avarice_nms",
@@ -38,5 +40,10 @@ function dbquery_func($connection_info, $query, $debug="off") {
   };
   return $return;
 };
+
+//CREATE TABLE IF NOT EXISTS `config` (
+//  `parameter` varchar(64) NOT NULL,
+//  `value` varchar(128) NOT NULL
+//) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 ?>
