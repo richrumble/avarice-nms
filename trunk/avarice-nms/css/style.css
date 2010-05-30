@@ -1,26 +1,44 @@
-body{background-color:#343334;font-family:Arial, Helvetica, sans-serif;font-weight:400;}
-div{border:0 none;display:block;margin:0;padding:0;}
+body{background: #000000; font-family:Arial,Helvetica,sans-serif; font-weight:400;}
+div{border:0 none;margin:0;padding:0;}
+/*Css triangle's b*tch! */
+.arrow-border-btm  {border-color:#2A551D transparent transparent;border-style:solid;border-width:14px;height:0;left:114px;position:absolute;width:0;}
+.arrow-btm  {border-color:#000000 transparent transparent;border-style:solid;border-width:14px;height:0;left:114px;margin:-8px 0 0;position:absolute;width:0;}
+/*Imageless rounded corners (oh yeah, almost forgot... B*TCH!) */
+b.rtop, b.rbottom{display:block; background:none repeat scroll 0 0 transparent;}
+b.rtop *, b.rbottom *{display: block; height: 1px; overflow: hidden; background:none repeat scroll 0 0 #2a551d}
+b.r0{margin: 0 8px;}
+b.r1{margin: 0 5px;}
+b.r2{margin: 0 3px;}
+b.r3{margin: 0 2px;}
+b.r4{margin: 0 1px; height: 2px;} 
+b.r5{margin: 0 1px; height: 2px;} 
+.cell {margin: 0 0;padding:1px 0 1px;display:inline-block;;border-left:6px solid #2A551D;border-right:6px solid #2A551D;}
 form{border:0 none;margin:0;padding:0;}
-p,ul,ol{color:#999;}
+p,ul,ol{color:#aaaaaa; padding:0 2px 0 10px;}
 a img {border: 0px;}
 fieldset{border:0 none;}
-.header{background:transparent;float:none;height:50px;margin:0;padding:0;}
+.header{background:transparent;margin:0;padding:0;}
+#active {text-decoration:underline; background:url(../img/active-25px-grn.png) 0 0;}
 #head_nav{background:#acacac url(../img/nav-bg-25px.png) repeat;height:50px;border:2px solid #000000;}
-#head_nav ul{border:0;clear:left;list-style-type:none;margin:0;padding:0;text-align:center;}
+#head_nav ul{border:0;clear:left;list-style-type:none;margin:0;padding:0;text-align:center;font-size: 14pt;}
 #head_nav ul li{display:block;float:left;margin:0;padding:0;text-align:center;}
-#head_nav ul li a{display:block;height:38px;margin:0;padding: 12px 12px 0;width:auto;color:#fff; text-decoration:none;}
-#head_nav ul li a.nav:hover{text-decoration:underline; background:url(../img/nav-bg-25px-green.png) 0 -50px;}
+#head_nav ul li a{display:block;margin:0;height:38px;padding: 12px 12px 0;width:auto;color:#fff; text-decoration:none;}
+#head_nav ul li a.nav:hover{text-decoration:underline; background:url(../img/nav-bg-25px-grn.png) 0 -50px;}
+#head_nav ul li a.active{display:block;height:38px;padding: 12px 12px 0;width:auto;color:#fff; text-decoration:underline; background:url(../img/active-25px-orng.png) 0 0;}
+#head_nav ul li a.active:hover {text-decoration:underline; background:url(../img/active-25px-orng.png) 0 -50px;}
+
 .header #search{position:absolute;right:5%;top:5px;}
 .header #search fieldset{width:220px;}
 .header #search form{position:relative;}
 .header #search #search_header{background:transparent url(../img/search.png) no-repeat scroll 0 0;border:0 none;font-size:90%;font-style:normal;font-variant:normal;font-weight:700;height:40px;line-height:100%;margin:10px 0;padding:0;position:absolute;right:5%;top:0;width:200px;}
 .header #search #search_input{border:0 none;line-height:90%;margin:5px 15px;padding:0;width:164px; background:transparent none no-repeat scroll 0 0;color:#fff; font-size: 14pt;}
-.left_column{background:#030303 url(../img/lc-bg-1.png) no-repeat scroll center top;border:2px solid #000;color:#999;float:left;margin-top:10px;max-width:240px;padding-left:10px;clear:left;}
-h3{color:#9A5E2C;}
-.main{background:#030303 url(../img/main-bg.png) repeat-x scroll 0 0;border:3px solid #000;color:#ccc;margin:13px 0 0 265px;min-width:800px;padding-left:10px;}
-.main h1{color:#65407A;margin:0;padding:5px 0 0;}
-.footer{background:transparent url(../img/footer-bg.png) repeat-x scroll 0 0;clear:both;float:left;height:50px;margin:10px 0 0;width:100%;}
-.footer p {background:transparent url(../img/footer-p-bg.png) no-repeat scroll 0 0;border:4px solid #000000;margin:-4px 0 0;padding:8px 0 12px 400px;}
+.left_column{float:left;margin-top:12px;max-width:240px;}
+h3{color:#9A5E2C;padding:0 0 0 10px;}
+.main{color:#ccc;margin:12px 0 0 255px;min-width:800px;}
+.main-only{color:#ccc;margin:12px 0 0 0px;min-width:800px;}
+.main-only h1, .main h1{color:#215D9C;margin:0;padding:5px 10px 0;}
+.footer{background:transparent url(../img/footer-bg.png) repeat-x scroll 0 0;clear:both;float:left;height:50px;margin:10px 0 0;width:100%; padding: 1px 0 0;}
+.footer p {background:url("../img/avarice-cir-37px.png") no-repeat scroll 0 -1px transparent;margin:8px 0 0;text-align:center;}
 .blackborder{border:2px solid #000;}
 .legend_null,.noscreen {display:none;}
 .packet_header {border: solid 1px #000000; padding: 0 2px;font-size:10pt; text-align:left;}
