@@ -12,7 +12,7 @@ function find ($string, $array = array ()) {
 print "
        <form method=\"popst\" action=\"form.php\">
         Data Block:<br />
-        <taxtarea name=\"datadump\">"; if (isset($form_data['datadump'])) { print $form_dta['datadump']; }; print "</textarea><br />
+        <textarea name=\"datadump\">"; if (isset($form_data['datadump'])) { print $form_dta['datadump']; }; print "</textarea><br />
         Search for:<br />
         <input type=\"text\" name=\"item\""; if (isset($form_data['item'])) { print " value=\"" . $form_data['item'] . "\""; }; print " /><br />
         <input type=\"submit\" value=\"Search\" />
