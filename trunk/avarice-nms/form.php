@@ -7,7 +7,11 @@ function find ($string, $array = array ()) {
       $array[$key] = $value;
     };
   };
-  return $array;
+  if (!empty($array)) {
+    return $array;
+  } else {
+    return FALSE;
+  };
 };
 if (isset($form_data['machines'], $form_data['ossec'])) {
   $machines_array = explode("\n", $form_data['machines']);
@@ -30,8 +34,9 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
           $line .= ", down
 ";
         };
-        $result_array = array_merge($result_array, find(strtolower($hn), explode("\n", $form_data['ossec'])));
-        $result_array = array_merge($result_array, find(strtolower($ip), explode("\n", $form_data['ossec'])));
+        if (find(strtolower($hn), explode("\n", $form_data['ossec'])) or find(strtolower($ip), explode("\n", $form_data['ossec']))) {
+          $result_array[] = $value;
+        };
       } else {
         $line = $value . " does not exist";
       };
@@ -41,9 +46,9 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
     };
   };
   if (empty($result_array)) {
-    print $form_data['item'] . " not found";
+    print "Nothing already exists";
   } else {
-    print "Results:<br />";
+    print "Repeats:<br />";
     foreach ($result_array as $value) {
       print $value . "<br />";
     };
