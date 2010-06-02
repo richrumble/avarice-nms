@@ -9,9 +9,9 @@ function find ($string, $array = array ()) {
   };
   return $array;
 };
-if (isset($form_data['machines'])) {
+if (isset($form_data['machines'], $form_data['ossec'])) {
   $machines_array = explode("\n", $form_data['machines']);
-  $datadump = "";
+  $datadump = ""; $result_array = array();
   foreach ($machines_array as $value) {
     $value = trim($value);
     if (!empty($value)) {
@@ -19,8 +19,10 @@ if (isset($form_data['machines'])) {
       if (count($output) != 3) {
         $x = count($output) - 3;
         $y = count($output) - 2;
-        $line = substr($output[$y], strrpos($output[$y], " ") + 1) . ", " . substr($output[$x], strrpos($output[$x], " ") + 1);
-        exec("ping -n 1 -w 1 " . $value, $output, $result);
+        $ip = substr($output[$y], strrpos($output[$y], " ") + 1);
+        $hn = substr($output[$x], strrpos($output[$x], " ") + 1);
+        $line = $ip . ", " . $hn;
+        exec("ping -n 1 -w 1 " . $ip, $output, $result);
         if ($result == 0) {
           $line .= ", up
 ";
@@ -28,15 +30,16 @@ if (isset($form_data['machines'])) {
           $line .= ", down
 ";
         };
+        $result_array = array_merge($result_array, find(strtolower($hn), explode("\n", $form_data['ossec'])));
+        $result_array = array_merge($result_array, find(strtolower($ip), explode("\n", $form_data['ossec'])));
       } else {
         $line = $value . " does not exist";
       };
       $line = str_replace(array("\n", "\r\n"), "", $line);
       $datadump .= $line . "\n";
-      unset($nslookup_output, $output, $result, $line);
+      unset($nslookup_output, $output, $result, $line, $ip, $hn);
     };
   };
-  $result_array = find(strtolower($form_data['item']), explode("\n", $datadump));
   if (empty($result_array)) {
     print $form_data['item'] . " not found";
   } else {
@@ -51,10 +54,10 @@ print "
        <form method=\"post\" action=\"form.php\">
         Machines (one per line):<br />
         <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
-        Data Block (read only):<br />
+        Parsed Machines(read only):<br />
         <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
-        Search for:<br />
-        <input type=\"text\" name=\"item\""; if (isset($form_data['item'])) { print " value=\"" . $form_data['item'] . "\""; }; print " /><br />
+        Already in OSSEC:<br />
+        <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
         <input type=\"submit\" value=\"Search\" />
        </form>
        <p />
