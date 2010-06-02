@@ -15,7 +15,7 @@ function find ($string, $array = array ()) {
 };
 if (isset($form_data['machines'], $form_data['ossec'])) {
   $machines_array = explode("\n", $form_data['machines']);
-  $datadump = ""; $result_array = array();
+  $datadump = ""; $repeats_array = array(); $uniques_array = array();
   foreach ($machines_array as $value) {
     $value = trim($value);
     if (!empty($value)) {
@@ -35,7 +35,9 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
 ";
         };
         if (find(strtolower($hn), explode("\n", $form_data['ossec'])) or find(strtolower($ip), explode("\n", $form_data['ossec']))) {
-          $result_array[] = $value;
+          $repeats_array[] = $line;
+        } else {
+          $uniques_array[] = $line;
         };
       } else {
         $line = $value . " does not exist";
@@ -45,11 +47,20 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
       unset($nslookup_output, $output, $result, $line, $ip, $hn);
     };
   };
-  if (empty($result_array)) {
+  print " Repeats:<br />";
+  if (empty($repeats_array)) {
     print "Nothing already exists";
   } else {
-    print "Repeats:<br />";
-    foreach ($result_array as $value) {
+    foreach ($repeats_array as $value) {
+      print $value . "<br />";
+    };
+  };
+  print "<hr />
+         Uniques:<br />";
+  if (empty($uniques_array)) {
+    print "No uniques";
+  } else {
+    foreach ($uniques_array as $value) {
       print $value . "<br />";
     };
   };
