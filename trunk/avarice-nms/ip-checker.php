@@ -13,6 +13,19 @@ function find ($string, $array = array ()) {
     return FALSE;
   };
 };
+print "
+       <form method=\"post\" action=\"form.php\">
+        Machines (one per line):<br />
+        <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
+        Parsed Machines(read only):<br />
+        <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
+        Already in OSSEC:<br />
+        <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
+        <input type=\"submit\" value=\"Search\" />
+       </form>
+       <p />
+";
+
 if (isset($form_data['machines'], $form_data['ossec'])) {
   $machines_array = explode("\n", $form_data['machines']);
   $datadump = ""; $repeats_array = array(); $uniques_array = array();
@@ -47,36 +60,26 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
       unset($nslookup_output, $output, $result, $line, $ip, $hn);
     };
   };
-  print " Repeats:<br />";
+  print " Repeats:<br />
+          <textarea rows=\"5\" cols=\"50\" name=\"repeats\">";
   if (empty($repeats_array)) {
     print "Nothing already exists";
   } else {
     foreach ($repeats_array as $value) {
-      print $value . "<br />";
+      print $value . "";
     };
   };
-  print "<hr />
-         Uniques:<br />";
+  print "</textarea>
+         <hr />
+         Uniques:<br />
+		 <textarea rows=\"5\" cols=\"50\" name=\"uniques\">";
   if (empty($uniques_array)) {
     print "No uniques";
   } else {
     foreach ($uniques_array as $value) {
-      print $value . "<br />";
+      print $value . "";
     };
   };
-  print "<hr />";
+  print "</textarea><hr />";
 };
-print "
-       <form method=\"post\" action=\"form.php\">
-        Machines (one per line):<br />
-        <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
-        Parsed Machines(read only):<br />
-        <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
-        Already in OSSEC:<br />
-        <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
-        <input type=\"submit\" value=\"Search\" />
-       </form>
-       <p />
-";
-
 ?>
