@@ -14,16 +14,23 @@ function find ($string, $array = array ()) {
   };
 };
 print "
-       <form method=\"post\" action=\"form.php\">
-        Machines (one per line):<br />
-        <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
-        Parsed Machines(read only):<br />
-        <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
-        Already in OSSEC:<br />
-        <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
-        <input type=\"submit\" value=\"Search\" />
-       </form>
-       <p />
+		<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0 Transitional//EN\">
+        <html>
+          <head>
+		    <title>IP and Name checker</title>
+		  </head>
+            <body>	 
+              <div>
+               <form method=\"post\" action=\"ip-checker.php\">
+                <label>Machines (one per line):</label>
+                <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
+                <label>Parsed Machines(read only):</label>
+                <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
+                <label>Already in OSSEC:</label>
+                <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
+                <input type=\"submit\" value=\"Search\" />
+               </form>
+		     </div>
 ";
 
 if (isset($form_data['machines'], $form_data['ossec'])) {
@@ -82,4 +89,6 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
   };
   print "</textarea><hr />";
 };
+print "</body>
+      </html>";
 ?>
