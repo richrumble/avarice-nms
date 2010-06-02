@@ -18,15 +18,16 @@ print "
         <html>
           <head>
 		    <title>IP and Name checker</title>
+			<link type=\"text/css\" rel=\"stylesheet\" href=\"ip-check.css\">
 		  </head>
             <body>	 
-              <div>
+              <div id=\"left\">
                <form method=\"post\" action=\"ip-checker.php\">
-                <label>Machines (one per line):</label>
+                <label>Machines (one per line):</label><br />
                 <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
-                <label>Parsed Machines(read only):</label>
+                <label>Parsed Machines(read only):</label><br />
                 <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
-                <label>Already in OSSEC:</label>
+                <label>Already in OSSEC:</label><br />
                 <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
                 <input type=\"submit\" value=\"Search\" />
                </form>
@@ -67,8 +68,9 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
       unset($nslookup_output, $output, $result, $line, $ip, $hn);
     };
   };
-  print " Repeats:<br />
-          <textarea rows=\"5\" cols=\"50\" name=\"repeats\">";
+  print " <div id=\"right\">
+          Repeats:<br />
+          <textarea rows=\"5\" cols=\"50\"  id=\"repeats\" name=\"repeats\">";
   if (empty($repeats_array)) {
     print "Nothing already exists";
   } else {
@@ -77,9 +79,8 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
     };
   };
   print "</textarea>
-         <hr />
          Uniques:<br />
-		 <textarea rows=\"5\" cols=\"50\" name=\"uniques\">";
+		 <textarea rows=\"5\" cols=\"50\" id=\"uniques\" name=\"uniques\">";
   if (empty($uniques_array)) {
     print "No uniques";
   } else {
@@ -87,7 +88,8 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
       print $value . "";
     };
   };
-  print "</textarea><hr />";
+  print "</textarea>
+        </div>";
 };
 print "</body>
       </html>";
