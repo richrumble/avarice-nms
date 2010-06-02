@@ -25,9 +25,8 @@ print "
                <form method=\"post\" action=\"ip-checker.php\">
                 <label>Machines (one per line):</label><br />
                 <textarea rows=\"5\" cols=\"50\" name=\"machines\">"; if (isset($form_data['machines'])) { print $form_data['machines']; }; print "</textarea><br />
-                <label>Parsed Machines(read only):</label><br />
-                <textarea rows=\"5\" cols=\"50\" readonly>"; if (isset($datadump)) { print $datadump; }; print "</textarea><br />
-                <label>Already in OSSEC:</label><br />
+                <br />
+				<label>Copy OSSEC DB list here:</label><br />
                 <textarea rows=\"5\" cols=\"50\" name=\"ossec\">"; if (isset($form_data['ossec'])) { print $form_data['ossec']; }; print "</textarea><br />
                 <input type=\"submit\" value=\"Search\" />
                </form>
@@ -79,6 +78,7 @@ if (isset($form_data['machines'], $form_data['ossec'])) {
     };
   };
   print "</textarea>
+         <br />
          Uniques:<br />
 		 <textarea rows=\"5\" cols=\"50\" id=\"uniques\" name=\"uniques\">";
   if (empty($uniques_array)) {
