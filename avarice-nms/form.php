@@ -14,13 +14,9 @@ if (isset($form_data['machines'])) {
   $datadump = "";
   foreach ($machines_array as $value) {
     exec("nslookup " . $value, $nslookup_output);
-    if (filter_var($value, FILTER_VALIDATE_IP)) {
-      $x = count($nslookup_output) - 3;
-      $line = $value . ", " . substr($nslookup_output[$x], strrpos($nslookup_output[$x], " ") + 1);
-    } else {
-      $x = count($nslookup_output) - 2;
-      $line = substr($nslookup_output[$x], strrpos($nslookup_output[$x], " ") + 1) . ", " . $value;
-    };
+    $x = count($nslookup_output) - 3;
+    $y = count($nslookup_output) - 2;
+    $line = substr($nslookup_output[$y], strrpos($nslookup_output[$y], " ") + 1) . ", " . substr($nslookup_output[$x], strrpos($nslookup_output[$x], " ") + 1);
     exec("ping -n 1 -w 1 " . $value, $output, $result);
     if ($result == 0) {
       $line .= ", up
