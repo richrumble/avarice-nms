@@ -16,6 +16,22 @@ $avarice_admin_connection = array("db_type"  => "mysql",
                                   "username" => "avarice_admin",
                                   "password" => "KcQMFBQZFpmP9tmu");
 
+$module_db_result = dbquery_func($avarice_admin_connection, "SELECT module, db_name FROM modules WHERE active=\"1\"", "on");
+while($row = mysql_fetch_assoc($module_db_result)) {
+  ${"avarice_user_module_" . $row['module'] . "_connection"} = array("db_type"  => "mysql",
+                                                                     "db_host"  => "localhost",
+                                                                     "db_port"  => "3306",
+                                                                     "db_name"  => $row['db_name'],
+                                                                     "username" => "avarice_user",
+                                                                     "password" => "We8AcQTvDXwqJsmz");
+  ${"avarice_admin_module_" . $row['module'] . "_connection"} = array("db_type"  => "mysql",
+                                                                      "db_host"  => "localhost",
+                                                                      "db_port"  => "3306",
+                                                                      "db_name"  => $row['db_name'],
+                                                                      "username" => "avarice_admin",
+                                                                      "password" => "KcQMFBQZFpmP9tmu");
+};
+
 function dbquery_func($connection_info, $query, $debug="off") {
   if ($connection_info['db_type'] == "mysql") {
     $port_deliminator = ":";
