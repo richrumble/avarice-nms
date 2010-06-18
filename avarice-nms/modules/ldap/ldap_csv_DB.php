@@ -27,7 +27,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
     if (empty($objectClass)) continue;
     $table_exists_result = dbquery_func($avarice_admin_connection, "SHOW TABLES LIKE '" . charreplace($objectClass) . "'");
     if (mysql_num_rows($table_exists_result) == 0) {
-      $create_table_query = "CREATE TABLE avarice_nms." . charreplace($objectClass) . " (" . charreplace($objectClass) . "_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY";
+      $create_table_query = "CREATE TABLE " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass) . " (" . charreplace($objectClass) . "_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY";
       foreach ($details['field_details'] as $key => $varray) {
         $create_table_query .= ", " . charreplace($key) . " ";
         if ($varray['is_numeric'] != 1) {
@@ -49,7 +49,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       $create_table_query .= ") ENGINE = INNODB";
       dbquery_func($avarice_admin_connection, $create_table_query, "on");
     } else {
-      $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . charreplace($objectClass));
+      $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass));
       $fields_exist_details = array();
       while ($field_row = mysql_fetch_assoc($field_list_result)) {
         if (isset($first_field_row_done)) {
@@ -64,7 +64,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       };
       $additional_fields = array_diff_key($details['field_details'], $fields_exist_details);
       if (count($additional_fields) > 0) {
-        $add_query = "ALTER TABLE avarice_nms." . charreplace($objectClass) . " ";
+        $add_query = "ALTER TABLE " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass) . " ";
         foreach ($additional_fields as $new_field => $junk) {
           if (!isset($first_add)) {
             $first_add = "true";
@@ -93,7 +93,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
   $func_start_time = microtime_float();
   foreach ($table_array as $objectClass => $details) {
     if (empty($objectClass)) continue;
-    $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM avarice_nms." . charreplace($objectClass));
+    $column_list_result = dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass));
     $column_list = array();
     while ($row = mysql_fetch_assoc($column_list_result)) {
       if (isset($first_field_row_done)) {
@@ -102,7 +102,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         $first_field_row_done = "true";
       };
     };
-    $insert_query = "INSERT INTO avarice_nms." . charreplace($objectClass) . " (";
+    $insert_query = "INSERT INTO " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass) . " (";
     foreach ($column_list as $column) {
       if (!isset($first_insert_column)) {
         $first_insert_column = "true";
@@ -147,7 +147,7 @@ function ldap_to_db_data($table_array, $avarice_admin_connection) {
         };
         unset($first_insert_column);
         dbquery_func($avarice_admin_connection, $insert_query, "on");
-        $insert_query = "INSERT INTO avarice_nms." . charreplace($objectClass) . " (";
+        $insert_query = "INSERT INTO " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass) . " (";
         foreach ($column_list as $column) {
           if (!isset($first_insert_column)) {
             $first_insert_column = "true";
@@ -214,8 +214,8 @@ if (($handle = fopen($file, "r")) !== FALSE) {
       };
     };
     if ($batch_counter == $batchSizeSpec) {
-      $dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
-      $dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
+      $dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_module_ldap_connection);
+      $dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_module_ldap_connection);
       $objectclass_array = array();
       $num_batches++;
       $batch_counter = 1;
@@ -227,8 +227,8 @@ if (($handle = fopen($file, "r")) !== FALSE) {
   fclose($handle);
 };
 
-$dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_connection);
-$dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_connection);
+$dbtime = $dbtime + ldap_to_db_structure($objectclass_array, $avarice_admin_module_ldap_connection);
+$dbtime = $dbtime + ldap_to_db_data($objectclass_array, $avarice_admin_module_ldap_connection);
 $num_batches++;
 
 $end_time = microtime_float();

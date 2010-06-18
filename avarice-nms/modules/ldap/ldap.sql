@@ -1,0 +1,2 @@
+-- Create db called for the ldap info and plug in information into avarice_nms.modules (module name of 'ldap')
+-- database will be populated when script is run.
