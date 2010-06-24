@@ -11,7 +11,7 @@
 ' * (21/05/2010) Chris Dent : Added automatic conversion from "localhost" to "." for connections only
 ' * (21/05/2010) Chris Dent : Added IIS query set
 ' * (24/05/2010) Chris Dent : Added test for Domain Controllers to Local User and Local Group checks
-
+' * (22/06/2010) richrmble  : Added and or changed the items collected in various parts of the script (changed hwerr to pnp for example)
 Option Explicit
 
 '
@@ -50,7 +50,7 @@ Sub SortArgs
 
   If strFileName = "" Then strFileName = "Default.xml"
 
-  Dim strTests : strTests = "hd,bios,pc,vid,mem,nic,cpu,hwerr,os,srvc,av,fw,ie,grp,usr,qfe,prog,apppool,ftp,smtp,web"
+  Dim strTests : strTests = "hd,bios,pc,csp,vid,mem,nic,cpu,pnp,os,srvc,av,fw,ie,grp,usr,qfe,suc,prog,apppool,ftp,smtp,web"
   If objArgs.Named("c") <> "" Then strTests = objArgs.Named("c")
 
   Dim strTest
@@ -277,22 +277,12 @@ Sub HDInformation(objWmi, objXml)
   Dim arrProperties
 
   objXml.OpenChild "drives"
-  objXml.OpenChild "mapped"
 
-  arrProperties = Array("Description", "DeviceID", "FreeSpace", "Name", "ProviderName", _
-    "VolumeSerialNumber", "Size", "VolumeName")
+  arrProperties = Array("Description", "DeviceID", "FreeSpace", "InterfaceType", "Name", "Partitions", "ProviderName", _
+    "VolumeSerialNumber", "SCSIBus", "SCSILogicalUnit", "SCSIPort", "SCSITargetId", "Size", "VolumeName")
 
-  WmiToXml objWmi, objXml, "Drive", "Win32_LogicalDisk", arrProperties, "Description='Network Connection'"
-
-  objXml.CloseChild()
-  objXml.OpenChild "physical"
-
-  arrProperties = Array("Description", "DeviceID", "FileSystem", "FreeSpace", "Name", _
-    "VolumeSerialNumber", "Size", "VolumeName")
-
-  WmiToXml objWmi, objXml, "Drive", "Win32_LogicalDisk", arrProperties, "Description='Local Fixed Disk'"
-
-  objXml.CloseChild()
+  WmiToXml objWmi, objXml, "Drive", "Win32_LogicalDisk", arrProperties, ""
+  
   objXml.CloseChild()
 
 End Sub
@@ -303,8 +293,8 @@ End Sub
 
 Sub ComputerInformation(objWmi, objXml)
 
-  Dim arrProperties : arrProperties = Array("Caption", "Description", "DomainRole", _
-    "Domain", "Manufacturer", "Model", "Name", "CurrentTimeZone")
+  Dim arrProperties : arrProperties = Array("Caption", "CurrentTimeZone", "Description", "DaylightInEffect", "Domain", _
+"DomainRole", "Manufacturer", "Model", "Name", "PrimaryOwnerContact", "PrimaryOwnerName", "TotalPhysicalMemory", "UserName")
 
   WmiToXml objWmi, objXml, "Computer", "Win32_ComputerSystem", arrProperties, ""
 
@@ -316,14 +306,26 @@ End Sub
 
 Sub OSInformation(objWmi, objXml)
 
-  Dim arrProperties : arrProperties = Array("CountryCode", "CSDVersion", "CSName", _
+  Dim arrProperties : arrProperties = Array("Caption", "CountryCode", "CSDVersion", "CSName", _
     "FreeSpaceInPagingFiles", "FreePhysicalMemory", "FreeVirtualMemory", "InstallDate", _
     "Locale", "LocalDateTime", "LastBootUpTime", "NumberOfUsers", "NumberOfProcesses", _
-    "Organization", "OSLanguage", "OSType", "OSProductSuite", "ProductType", _
+    "Organization", "SystemDrive", "OSLanguage", "OSType", "OSProductSuite", "ProductType", _
     "RegisteredUser", "SerialNumber", "ServicePackMajorVersion", "ServicePackMinorVersion", _
     "CurrentTimeZone", "TotalVirtualMemorySize", "TotalVisibleMemorySize", "Version")
 
   WmiToXml objWmi, objXml, "OperatingSystem", "Win32_OperatingSystem", arrProperties, ""  
+
+End Sub
+
+'
+' ======= Computer System Product(Win32_ComputerSystemProduct  ========
+'
+
+Sub CSProduct(objWmi, objXml)
+
+  Dim arrProperties : arrProperties = Array("Caption", "IdentifyingNumber", "Name", "UUID", "Version")
+
+  WmiToXml objWmi, objXml, "CSProduct", "Win32_ComputerSystemProduct", arrProperties, ""  
 
 End Sub
 
@@ -333,24 +335,27 @@ End Sub
 
 Sub BIOSInformation(objWmi, objXml)
 
-  Dim arrProperties : arrProperties = Array("BuildNumber", "Description", "Manufacturer", "Name", _
-    "ReleaseDate", "SerialNumber", "Version")
+  Dim arrProperties : arrProperties = Array("Description", "Manufacturer", "Name", _
+    "ReleaseDate", "SerialNumber", "SMBIOSBIOSVersion", "Version")
 
   WmiToXml objWmi, objXml, "Bios", "Win32_BIOS", arrProperties, ""
 
 End Sub
 
 '
-' ==================  Video (Win32_Video)  ==================
+' ==================  Video (Win32_VideoController)  ==================
 '
 
 Sub VideoInformation(objWmi, objXml)
 
   objXml.OpenChild "Video"
 
-  Dim arrProperties : arrProperties = Array("Description", "Name", "RefreshRate", "VideoMode")
+  Dim arrProperties : arrProperties = Array("AdapterCompatibility", "AdapterDACType", "AdapterRAM", _
+  "Caption", "CurrentHorizontalResolution", "CurrentNumberOfColors", "CurrentRefreshRate", _
+  "CurrentVerticalResolution", "Description", "DeviceID", "DriverDate", "DriverVersion", _
+  "InstalledDisplayDrivers", "Name", "PNPDeviceID", "VideoModeDescription", "VideoProcessor")
 
-  WmiToXml objWmi, objXml, "Gpu", "Win32_DisplayControllerConfiguration", arrProperties, ""
+  WmiToXml objWmi, objXml, "Gpu", "Win32_VideoController", arrProperties, ""
 
   objXml.CloseChild()
 
@@ -391,16 +396,17 @@ Sub CPUInformation(objWmi, objXml)
 End Sub
 
 '
-' =================  Hardware Error (Win32_PNPEntity)  =================
-'
+' =================  PNP Hardware (Win32_PNPEntity)  =================
+''http://msdn.microsoft.com/en-us/library/aa394353%28VS.85%29.aspx
 
-Sub HWErrorInformation(objWmi, objXml)
+Sub PNPInformation(objWmi, objXml)
 
-  objXml.OpenChild "Errors"
+  objXml.OpenChild "PlugNPlay"
 
-  Dim arrProperties : arrProperties = Array("ConfigManagerErrorCode", "Description", "DeviceID", "Manufacturer", "Name")
+  Dim arrProperties : arrProperties = Array("Caption", "ClassGuid", "ConfigManagerErrorCode", _
+  "Description", "DeviceID", "Manufacturer", "Name", "Service", "Status", "StatusInfo")
 
-  WmiToXml objWmi, objXml, "Err", "Win32_PNPEntity", arrProperties, "ConfigManagerErrorCode<>0"
+  WmiToXml objWmi, objXml, "PnP", "Win32_PNPEntity", arrProperties, ""
 
   objXml.CloseChild()
 
@@ -807,6 +813,22 @@ Sub WebServers(objWmi, objXml)
 End Sub
 
 '
+' ===========  Startup Command (Win32_StartupCommand)  ===========
+'
+
+Sub StartupCommand(objWmi, objXml)
+
+  objXml.OpenChild "StartUp"
+
+  Dim arrProperties : arrProperties = Array("Caption",  "Command",  "Description",  "Location",  "Name", "User")
+
+  WmiToXml objWmi, objXml, "StartItem", "Win32_StartupCommand", arrProperties, ""
+
+  objXml.CloseChild()
+
+End Sub
+
+'
 ' ========================  Main Code =======================
 '
 
@@ -860,14 +882,16 @@ For Each strComputer in arrComputers
       If objTests.Exists("hd") Then    HDInformation       objWmi, objXml
       If objTests.Exists("os") Then    OSInformation       objWmi, objXml
       If objTests.Exists("pc") Then    ComputerInformation objWmi, objXml
+      If objTests.Exists("csp") Then   CSProduct           objWmi, objXml
       If objTests.Exists("bios") Then  BIOSInformation     objWmi, objXml
       If objTests.Exists("vid") Then   VideoInformation    objWmi, objXml
       If objTests.Exists("mem") Then   MemoryInformation   objWmi, objXml
       If objTests.Exists("cpu") Then   CPUInformation      objWmi, objXml
-      If objTests.Exists("hwerr") Then HWErrorInformation  objWmi, objXml
+      If objTests.Exists("pnp") Then   PNPInformation      objWmi, objXml
       If objTests.Exists("srvc") Then  ServiceInformation  objWmi, objXml
       If objTests.Exists("usr") Then   UserInformation     objWmi, objXml
       If objTests.Exists("qfe") Then   QFEInformation      objWmi, objXml
+      If objTests.Exists("suc") Then   StartupCommand      objWmi, objXml
 
       If objTests.Exists("nic") Then
         On Error Resume Next
