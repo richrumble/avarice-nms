@@ -1,4 +1,4 @@
-' A script to generate an XML formatted inventory 
+' A script to generate an XML formatted inventory
 '
 ' Author:  Chris Dent
 ' Webpage: www.indented.co.uk
@@ -82,7 +82,7 @@ Class XmlWriter
 
   '
   ' Public Methods
-  ' 
+  '
 
   Public Sub Save(strFileName)
     objXml.Save(strFileName)
@@ -164,7 +164,7 @@ Sub WmiToXml(objWmi, objXml, strNodeName, strClass, arrProperties, strFilter)
 
   Dim strWql
   strWql = "SELECT * FROM " & strClass
- 
+
   If strFilter <> "" Then strWql = strWql & " WHERE " & strFilter
 
   On Error Resume Next
@@ -210,7 +210,7 @@ Sub WmiToXml(objWmi, objXml, strNodeName, strClass, arrProperties, strFilter)
               objXml.AddNode objProperty.Name, Join(objProperty.Value, " ")
 
             End If
-  
+
           Else
 
             objXml.AddNode objProperty.Name, Trim(objProperty.Value)
@@ -241,7 +241,7 @@ End Function
 
 '
 ' ==================  IsDomainController ====================
-'  Uses Win32_ComputerSystem to determine whether or not the 
+'  Uses Win32_ComputerSystem to determine whether or not the
 '           connected system is a Domain Controller
 '
 
@@ -276,13 +276,13 @@ Sub HDInformation(objWmi, objXml)
 
   Dim arrProperties
 
-  objXml.OpenChild "drives"
+  objXml.OpenChild "Drives"
 
   arrProperties = Array("Description", "DeviceID", "FreeSpace", "InterfaceType", "Name", "Partitions", "ProviderName", _
     "VolumeSerialNumber", "SCSIBus", "SCSILogicalUnit", "SCSIPort", "SCSITargetId", "Size", "VolumeName")
 
   WmiToXml objWmi, objXml, "Drive", "Win32_LogicalDisk", arrProperties, ""
-  
+
   objXml.CloseChild()
 
 End Sub
@@ -313,7 +313,7 @@ Sub OSInformation(objWmi, objXml)
     "RegisteredUser", "SerialNumber", "ServicePackMajorVersion", "ServicePackMinorVersion", _
     "CurrentTimeZone", "TotalVirtualMemorySize", "TotalVisibleMemorySize", "Version")
 
-  WmiToXml objWmi, objXml, "OperatingSystem", "Win32_OperatingSystem", arrProperties, ""  
+  WmiToXml objWmi, objXml, "OperatingSystem", "Win32_OperatingSystem", arrProperties, ""
 
 End Sub
 
@@ -325,7 +325,7 @@ Sub CSProduct(objWmi, objXml)
 
   Dim arrProperties : arrProperties = Array("Caption", "IdentifyingNumber", "Name", "UUID", "Version")
 
-  WmiToXml objWmi, objXml, "CSProduct", "Win32_ComputerSystemProduct", arrProperties, ""  
+  WmiToXml objWmi, objXml, "CSProduct", "Win32_ComputerSystemProduct", arrProperties, ""
 
 End Sub
 
@@ -387,7 +387,7 @@ Sub CPUInformation(objWmi, objXml)
 
   Dim arrProperties : arrProperties = Array("Caption", "CurrentClockSpeed", "Description", _
     "DeviceID", "Family", "L2CacheSize", "LoadPercentage", "Manufacturer", "Name", "NumberOfCores", _
-    "NumberOfLogicalProcessors")
+    "NumberOfLogicalProcessors", "PowerManagementCapabilities", "PowerManagementSupported", "ProcessorId")
 
   WmiToXml objWmi, objXml, "CPU", "Win32_Processor", arrProperties, ""
 
@@ -420,7 +420,7 @@ Sub ServiceInformation(objWmi, objXml)
 
   objXml.OpenChild "Services"
 
-  Dim arrProperties : arrProperties = Array("AcceptPause", "AcceptStop", "DesktopInteract", _
+  Dim arrProperties : arrProperties = Array("AcceptPause", "AcceptStop", "Caption", "DesktopInteract", _
     "DisplayName", "ErrorControl", "Name", "PathName", "ProcessId", "Started", "StartMode", _
     "StartName", "State")
 
@@ -457,16 +457,33 @@ End Sub
 
 Sub QFEInformation(objWmi, objXml)
 
-  objXml.OpenChild "qfe_info"
+  objXml.OpenChild "QFE_Info"
 
-  Dim arrProperties : arrProperties = Array("Caption", "CSName", "Description", "FixComments", _
-    "HotFixID", "InstalledBy", "InstalledOn", "Name", "ServicePackInEffect", "Status")
+  Dim arrProperties : arrProperties = Array("Caption", "Description", "FixComments", _
+    "HotFixID", "InstalledBy", "InstalledOn", "Name", "ServicePackInEffect")
 
   WmiToXml objWmi, objXml, "Fix", "Win32_QuickFixEngineering", arrProperties, ""
 
   objXml.CloseChild()
 
 End Sub
+
+'
+' ===========  Startup Command (Win32_StartupCommand)  ===========
+'
+
+Sub StartupCommand(objWmi, objXml)
+
+  objXml.OpenChild "StartUp"
+
+  Dim arrProperties : arrProperties = Array("Caption",  "Command",  "Description",  "Location",  "Name", "User")
+
+  WmiToXml objWmi, objXml, "StartItem", "Win32_StartupCommand", arrProperties, ""
+
+  objXml.CloseChild()
+
+End Sub
+
 
 '
 ' =========  Wmi: root\cimv2 and root\wmi Namespace =========
@@ -489,12 +506,15 @@ Sub NetworkInformation(objWmi_Cimv2, objWmi_RootWmi, objXml)
 
     objXml.OpenChild "Nic"
 
-    objXml.AddNode "Caption", objItem.Caption
-    objXml.AddNode "Description", objItem.Description
-    objXml.AddNode "DhcpEnabled", objItem.DhcpEnabled
-    objXml.AddNode "MacAddress", objItem.MacAddress
-    objXml.AddNode "WINSPrimaryServer", objItem.WINSPrimaryServer
-    objXml.AddNode "WINSSecondaryServer", objItem.WINSSecondaryServer
+    objXml.AddNode "Caption",                    objItem.Caption
+    objXml.AddNode "Description",                objItem.Description
+    objXml.AddNode "DhcpEnabled",                objItem.DhcpEnabled
+    objXml.AddNode "DHCPServer",                 objItem.DHCPServer
+    objXml.AddNode "FullDNSRegistrationEnabled", objItem.FullDNSRegistrationEnabled
+    objXml.AddNode "MacAddress",                 objItem.MacAddress
+    objXml.AddNode "WINSEnableLMHostsLookup",    objItem.WINSEnableLMHostsLookup
+    objXml.AddNode "WINSPrimaryServer", 	 objItem.WINSPrimaryServer
+    objXml.AddNode "WINSSecondaryServer", 	 objItem.WINSSecondaryServer
 
     Dim strDefaultIPGateway
     If Not IsNull(objItem.DefaultIPGateway) Then
@@ -507,6 +527,12 @@ Sub NetworkInformation(objWmi_Cimv2, objWmi_RootWmi, objXml)
        strDnsSuffixSearchOrder = Join(objItem.DnsDomainSuffixSearchOrder, ",")
     End If
     objXml.AddNode "DnsDomainSuffixSearchOrder", strDnsSuffixSearchOrder
+
+    Dim strDNSServerSearchOrder
+    If Not IsNull(objItem.DNSServerSearchOrder) Then
+       strDNSServerSearchOrder = Join(objItem.DNSServerSearchOrder, ",")
+    End If
+    objXml.AddNode "DNSServerSearchOrder", strDNSServerSearchOrder
 
     Dim objLinkSpeed : Set objLinkSpeed = objWmi_RootWmi.Get("MSNdis_LinkSpeed.InstanceName='" & _
       objItem.Description & "'")
@@ -552,8 +578,8 @@ Sub ProgramInformation(objWmi, objXml)
   Dim strKeyPath : strKeyPath = "Software\Microsoft\Windows\CurrentVersion\Uninstall"
 
   Dim arrSubKeys
-  objWmi.EnumKey HKEY_LOCAL_MACHINE, strKeyPath, arrSubKeys  
-  
+  objWmi.EnumKey HKEY_LOCAL_MACHINE, strKeyPath, arrSubKeys
+
   Dim strSubKey
   For Each strSubKey in arrSubKeys
 
@@ -578,7 +604,7 @@ Sub ProgramInformation(objWmi, objXml)
         Next
 
         objXml.CloseChild()
- 
+
       End If
     End If
 
@@ -728,7 +754,7 @@ Sub GroupInformation(objXml, strComputer, strUsername, strPassword)
       objXml.CloseChild() ' LocalGroups
     End If
     On Error Goto 0
-  End If  
+  End If
 End Sub
 
 '
@@ -813,22 +839,6 @@ Sub WebServers(objWmi, objXml)
 End Sub
 
 '
-' ===========  Startup Command (Win32_StartupCommand)  ===========
-'
-
-Sub StartupCommand(objWmi, objXml)
-
-  objXml.OpenChild "StartUp"
-
-  Dim arrProperties : arrProperties = Array("Caption",  "Command",  "Description",  "Location",  "Name", "User")
-
-  WmiToXml objWmi, objXml, "StartItem", "Win32_StartupCommand", arrProperties, ""
-
-  objXml.CloseChild()
-
-End Sub
-
-'
 ' ========================  Main Code =======================
 '
 
@@ -849,17 +859,17 @@ Dim objXml    : Set objXml = New XmlWriter
 Dim objErrXml : Set objErrXml = New XmlWriter
 
 ' Create a root node
-objXml.OpenChild "inventory" ' Root Element
+objXml.OpenChild "Inventory" ' Root Element
 objErrXml.OpenChild "errors"
 
 Dim strComputer
 For Each strComputer in arrComputers
 
-  objXml.OpenChild "Computer"
+  objXml.OpenChild "Asset"
   objXml.AddNode "Name", strComputer
   objXml.AddNode "ScanStarted", Now
 
-  objErrXml.OpenChild "Computer"
+  objErrXml.OpenChild "Asset"
   objErrXml.AddNode "Name", strComputer
   objErrXml.AddNode "ScanStarted", Now
 
@@ -919,7 +929,7 @@ For Each strComputer in arrComputers
       End If
 
     End If
-   
+
     '
     ' Classes from root\SecurityCenter
     '
@@ -942,7 +952,7 @@ For Each strComputer in arrComputers
       On Error Resume Next
       Set objWmi_MSIE = ConnectWmi(objErrXml, strComputer, "root\cimv2\Applications\MicrosoftIE", strUsername, strPassword)
       On Error Goto 0
-  
+
       If Not objWmi_MSIE Is Nothing Then
         MSIEInformation objWmi_MSIE, objXml
       End If
@@ -979,7 +989,7 @@ For Each strComputer in arrComputers
     objErrXml.CloseChild()
 
   End If
-  
+
   '
   ' Cleanup connections
   '
