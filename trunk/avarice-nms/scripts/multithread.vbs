@@ -1,5 +1,7 @@
 Option Explicit
 
+'useage: cscript multithread.vbs /childscript:inventory.vbs /ldapfilter:"(&(objectClass=computer))"
+
 ' Searches the domain for computers, executes a child script under a number of seperate processes for each
 ' batch of computers. Passes computer list to child as a semi-colon delimited list.
 '
