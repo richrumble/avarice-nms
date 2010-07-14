@@ -87,6 +87,27 @@ if (isset($form_data['usernames'], $form_data['input_type']) and (($form_data['i
   } else if ($form_data['input_type'] == "csvde") {
     if (is_file($form_data['floc'])) {
       if (($fp = fopen($form_data['floc'], "r")) !== FALSE) {
+        $account_control_array = array("16777216" => "TRUSTED_TO_AUTH_FOR_DELEGATION",
+                                       "8388608"  => "PASSWORD_EXPIRED",
+                                       "4194304"  => "DONT_REQ_PREAUTH",
+                                       "2097152"  => "USE_DES_KEY_ONLY",
+                                       "1048576"  => "NOT_DELEGATED",
+                                       "524288"   => "TRUSTED_FOR_DELEGATION",
+                                       "262144"   => "SMARTCARD_REQUIRED",
+                                       "131072"   => "MNS_LOGON_ACCOUNT",
+                                       "65536"    => "DONT_EXPIRE_PASSWORD",
+                                       "8192"     => "SERVER_TRUST_ACCOUNT",
+                                       "4096"     => "WORKSTATION_TRUST_ACCOUNT",
+                                       "2048"     => "INTERDOMAIN_TRUST_ACCOUNT",
+                                       "512"      => "NORMAL_ACCOUNT",
+                                       "256"      => "TEMP_DUPLICATE_ACCOUNT",
+                                       "128"      => "ENCRYPTED_TEXT_PWD_ALLOWED",
+                                       "64"       => "PASSWD_CANT_CHANGE",
+                                       "32"       => "PASSWD_NOTREQD",
+                                       "16"       => "LOCKOUT",
+                                       "8"        => "HOMEDIR_REQUIRED",
+                                       "2"        => "ACCOUNTDISABLE",
+                                       "1"        => "SCRIPT");
         while (!feof($fp)) {
           $line = fgetcsv($fp,4096,',','"');
           if (isset($userindex)) {
@@ -99,13 +120,26 @@ if (isset($form_data['usernames'], $form_data['input_type']) and (($form_data['i
                   $epoch = "NA";
                   $dtime = "NA";
                 };
-                $output .= "\"" . strtolower(trim($line[$userindex])) . "\",\"" . $dtime . "\",\"" . $epoch . "\",\"" . $line[$memberindex] . "\"\n";;
+                if (isset($line[$accountindex])) {
+                  $account = "";
+                  foreach ($account_control_array as $key => $value) {
+                    if ($line[$accountindex] >= $key) {
+                      $line[$accountindex] = $line[$accountindex] - $key;
+                      $account .= " " . $value;
+                    };
+                  };
+                  $account = trim($account);
+                } else {
+                  $account = "UNKNOWN";
+                };
+                $output .= "\"" . strtolower(trim($line[$userindex])) . "\",\"" . $dtime . "\",\"" . $epoch . "\",\"" . $account . "\",\"" . $line[$memberindex] . "\"\n";;
               };
             };
           } else {
-            $userindex   = array_search("sAMAccountName", $line);
-            $pwtimeindex = array_search("pwdLastSet", $line);
-            $memberindex = array_search("memberOf", $line);
+            $userindex    = array_search("sAMAccountName", $line);
+            $pwtimeindex  = array_search("pwdLastSet", $line);
+            $memberindex  = array_search("memberOf", $line);
+            $accountindex = array_search("userAccountControl", $line);
           };
         };
       } else {
