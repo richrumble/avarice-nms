@@ -55,6 +55,9 @@ if (isset($form_data['usernames'], $form_data['input_type']) and (($form_data['i
   $usernames_array = explode("\n", $form_data['usernames']);
   foreach($usernames_array as $key => $value) {
     $usernames_array[$key] = strtolower(trim($value));
+    if (empty($usernames_array[$key])) {
+      unset($usernames_array[$key]);
+    };
   };
   $usertime_array  = array(); $output = "";
   if ($form_data['input_type'] == "copypaste") {
