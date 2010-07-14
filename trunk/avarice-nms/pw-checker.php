@@ -14,7 +14,7 @@ print "
                 <textarea rows=\"5\" cols=\"50\" name=\"usernames\">"; if (isset($form_data['usernames'])) { print $form_data['usernames']; }; print "</textarea><br />
                 <br />
         <label>Copy Username,TimeStamp list here:</label><br />
-                <textarea rows=\"5\" cols=\"50\" name=\"usertime\">"; if (isset($form_data['usertime'])) { print $form_data['usertime']; }; print "</textarea><br />
+                <textarea id=\"uttextarea\" rows=\"5\" cols=\"50\" name=\"usertime\">"; if (isset($form_data['usertime'])) { print $form_data['usertime']; }; print "</textarea><br />
                 <input type=\"submit\" value=\"Search\" />
                </form>
          </div>
@@ -26,17 +26,23 @@ if (isset($form_data['usernames'], $form_data['usertime'])) {
   $usertime_array  = array();
   foreach ($temp_array as $tvalue) {
     $tarray = str_getcsv($tvalue);
-    $user = array_shift($tarray);
+    $user = trim(array_shift($tarray));
     $usertime_array[$user] = $tarray;
   };
   unset($temp_array);
   print " <div id=\"right\">
           Users Found:<br />
-          <textarea rows=\"14\" cols=\"75\"  id=\"results\" name=\"results\">";
+          <textarea rows=\"14\" cols=\"75\" id=\"results\" name=\"results\">";
   foreach ($usernames_array as $user) {
+    $user = trim($user);
     if (isset($usertime_array[$user])) {
-      $epoch = ($usertime_array[$user][0] / 10000000) - 11644473600;
-      $dtime = date('M j Y H:i:s', $epoch);
+      if ($usertime_array[$user][0] != "0") {
+        $epoch = ($usertime_array[$user][0] / 10000000) - 11644473600;
+        $dtime = date('M j Y H:i:s', $epoch);
+      } else {
+        $epoch = "NA";
+        $dtime = "NA";
+      };
       print "\"" . $user . "\",\"" . $dtime . "\",\"" . $epoch . "\"";
       for ($x=1; $x < count($usertime_array[$user]); $x++) {
         print ",\"" . $usertime_array[$user][$x] . "\"";
