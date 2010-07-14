@@ -115,7 +115,7 @@ if (isset($form_data['usernames'], $form_data['input_type']) and (($form_data['i
   
   print " <div id=\"right\">
           Users Found:<br />
-          <textarea rows=\"14\" cols=\"75\" id=\"results\" name=\"results\">" . $output . "</textarea>
+          <textarea rows=\"14\" cols=\"75\" id=\"results\" name=\"results\" readonly>" . $output . "</textarea>
         </div>";
 };
 print "</body>
