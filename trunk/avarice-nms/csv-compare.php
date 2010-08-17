@@ -20,14 +20,14 @@ $diffs   = array_diff($file1, $file2);
 
 if (($handle = fopen("csv-compare.matches.csv", "w")) !== FALSE) {
   foreach ($matches as $line) {
-    fwrite($handle, $line . "\n");
+    fwrite($handle, $line);
   };
 };
 fclose($handle);
 if (($handle = fopen("csv-compare.diffs.csv", "w")) !== FALSE) {
-  fwrite($handle, $file[0] . "\n");
+  fwrite($handle, $file1[0]);
   foreach ($diffs as $line) {
-    fwrite($handle, $line . "\n");
+    fwrite($handle, $line);
   };
 };
 fclose($handle);
