@@ -16,7 +16,7 @@ $file1 = file($filename1);
 $file2 = file($filename2);
 
 $matches = array_intersect($file1, $file2);
-$diffs   = array_diff($file1, $file2);
+$diffs   = array_merge(array_diff($file1, $file2), array_diff($file2, $file1));
 
 if (($handle = fopen("csv-compare.matches.csv", "w")) !== FALSE) {
   foreach ($matches as $line) {
