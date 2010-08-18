@@ -133,13 +133,13 @@ Function ConnectWmi(objErrXml, strComputer, strNamespace, strUsername, strPasswo
   If strNamespace = "" Then strNamespace = "root\cimv2"
 
   Dim objWmi
-
+Const HKEY_LOCAL_MACHINE = &H80000002
   On Error Resume Next : Err.Clear
   If strUsername <> "" And strPassword <> "" Then
     Dim objWbemLocator : Set objWbemLocator = CreateObject("WbemScripting.SWbemLocator")
     Set objWmi = objWbemLocator.ConnectServer(strComputer, strNamespace, strUsername, strPassword)
   Else
-    Set objWmi = GetObject("winmgmts:\\" & strComputer & "\" & strNamespace)
+    Set objWmi = GetObject("winmgmts:{impersonationLevel=impersonate}!\\" & strComputer & "\" & strNamespace)
   End If
 
   If Err.Number <> 0 Then
@@ -150,7 +150,7 @@ Function ConnectWmi(objErrXml, strComputer, strNamespace, strUsername, strPasswo
     objErrXml.CloseChild()
   End If
 
-  objWmi.Security_.authenticationLevel = WbemAuthenticationLevelPktPrivacy
+   objWmi.Security_.authenticationLevel = WbemAuthenticationLevelPktPrivacy
 
   Set ConnectWmi = objWmi
   On Error Goto 0
