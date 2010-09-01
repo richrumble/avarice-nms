@@ -12,4 +12,11 @@ function microtime_float() {
     list($usec, $sec) = explode(" ", microtime());
     return ((float)$usec + (float)$sec);
 };
+function is_cli() {
+  if(php_sapi_name() == "cli" and empty($_SERVER['REMOTE_ADDR'])) {
+    return TRUE;
+  } else {
+    return FALSE;
+  };
+};
 ?>

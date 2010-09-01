@@ -1,3 +1,4 @@
+<?php
 /*
  +--------------------------------------------------------------------------+
  | Copyright (C) 2009-2010 Xinn.org                                         |
@@ -22,22 +23,38 @@
  | http://xinn.org/avarice.php                                              |
  +--------------------------------------------------------------------------+
 */
-<?php
 
-include_once("../include/config.php");
+include_once("../../include/config.php");
 
 $start_time = microtime_float();
 
-if (empty($argv[1]) or !is_file($argv[1])) {
-  exit("You must provide a file to parse: php ldap_csv_DB \\path\\to\\file.csv\n");
+if (is_cli()) {
+  if (empty($argv[1]) or !is_file($argv[1])) {
+    exit("You must provide a file to parse: php ldap_csv_DB \\path\\to\\file.csv\n");
+  } else {
+    $file = $argv[1];
+  };
+  if (!empty($argv[2]) and is_numeric($argv[2])) {
+    $batchSizeSpec = $argv[2];
+  } else {
+    $batchSizeSpec = 500;
+  };
+  $line_break = "\n";
 } else {
-  $file = $argv[1];
-};
-
-if (!empty($argv[2]) and is_numeric($argv[2])) {
-  $batchSizeSpec = $argv[2];
-} else {
-  $batchSizeSpec = 500;
+  if (empty($form_data['file']) or !is_file($form_data['file']) or !is_numeric($form_data['batchSizeSpec'])) {
+    print "
+           <form action=\"" .  $_SERVER['PHP_SELF'] . "\" method=\"post\">
+            <label for=\"file\">Path to file:</label> <input type=\"text\" id=\"file\" name=\"file\" /><br />
+            <lable for=\"batchSizeSpec\">Batch Size:</label> <input type=\"text\" id=\"batchSizeSpec\" name=\"batchSizeSpec\" value=\"500\" /><br />
+            <input type=\"submit\" value=\"Submit\" />
+           </form>
+    ";
+    exit();
+  } else {
+    $file = $form_data['file'];
+    $batchSizeSpec = $form_data['batchSizeSpec'];
+    $line_break = "<br />";
+  };
 };
 
 function charreplace($char) {
@@ -260,12 +277,12 @@ $end_time = microtime_float();
 $total_time_taken = $end_time - $start_time;
 $parse_time_taken = $total_time_taken - $dbtime;
 
-print "CSV Parsed and DBs created\n";
-print "CSV file parsed in " . $parse_time_taken . " seconds\n";
-print "DB tables created and data entered in " . $dbtime . " seconds\n";
-print "Total time taken: " . $total_time_taken . " seconds\n";
-print "Number of Rows: " . $current_row . "\n";
-print "Number of Batches: " . $num_batches . "\n";
-print "Size of Batches: " . $batchSizeSpec . "\n";
+print "CSV Parsed and DBs created" . $line_break;
+print "CSV file parsed in " . $parse_time_taken . " seconds" . $line_break;
+print "DB tables created and data entered in " . $dbtime . " seconds" . $line_break;
+print "Total time taken: " . $total_time_taken . " seconds" . $line_break;
+print "Number of Rows: " . $current_row . $line_break;
+print "Number of Batches: " . $num_batches . $line_break;
+print "Size of Batches: " . $batchSizeSpec . $line_break;
 
 ?>
