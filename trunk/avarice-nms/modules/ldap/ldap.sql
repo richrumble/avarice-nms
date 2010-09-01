@@ -1,3 +1,4 @@
+-- Create database ava_ldap and insert the two tables below.  The rest will populate automatically.
 --
 -- Database: `ava_ldap`
 --
