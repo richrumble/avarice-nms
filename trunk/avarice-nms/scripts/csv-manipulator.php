@@ -13,12 +13,12 @@ if (empty($argv[1])) {
 };
 
 if (empty($argv[2]) or !is_file($argv[2])) {
-  exit("You must provide a function: php csv-manipulator.php -sc \\path\\to\\file1.csv \\path\\to\\file2.csv\n  Available functions s = sort, c = compare\n");
+  exit($argv[2] . " is not a file: php csv-manipulator.php -sc \\path\\to\\file1.csv \\path\\to\\file2.csv\n  Available functions s = sort, c = compare\n");
 };
 
-if (empty($argv[3]) or !is_file($argv[3])) {
-  exit("You must provide a function: php csv-manipulator.php -sc \\path\\to\\file1.csv \\path\\to\\file2.csv\n  Available functions s = sort, c = compare\n");
-} else {
+if (!empty($argv[3]) and !is_file($argv[3])) {
+  exit($argv[3] . " is not a file: php csv-manipulator.php -sc \\path\\to\\file1.csv \\path\\to\\file2.csv\n  Available functions s = sort, c = compare\n");
+} else if (!empty($argv[3]) and is_file($argv[3])){
   $filename2 = $argv[3];
   $output_filename2 = substr($argv[3], 0, -4) . "-sorted.csv";
 };
@@ -50,7 +50,9 @@ function csv_sort($filename) {
 
 if (in_array("sort", $funcs)) {
   for ($x=2; $x<count($argv); $x++) {
-    csv_sort($argv[$x]);
+    if (is_file($argv[$x])) {
+      csv_sort($argv[$x]);
+    };
   };
 };
 
