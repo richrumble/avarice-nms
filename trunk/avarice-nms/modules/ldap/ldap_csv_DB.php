@@ -68,7 +68,7 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
     if (empty($objectClass)) continue;
     $table_exists_result = dbquery_func($avarice_admin_connection, "SHOW TABLES LIKE '" . charreplace($objectClass) . "'");
     if (mysql_num_rows($table_exists_result) == 0) {
-      $create_table_query = "CREATE TABLE " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass) . " (" . charreplace($objectClass) . "_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY";
+      $create_table_query = "CREATE TABLE " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass) . " (" . charreplace($objectClass) . "_ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, orig_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP";
       foreach ($details['field_details'] as $key => $varray) {
         $create_table_query .= ", " . charreplace($key) . " ";
         if ($varray['is_numeric'] != 1) {
@@ -89,6 +89,62 @@ function ldap_to_db_structure($table_array, $avarice_admin_connection) {
       };
       $create_table_query .= ") ENGINE = INNODB";
       dbquery_func($avarice_admin_connection, $create_table_query, "on");
+      $trigger_query = "
+                        DELIMITER ||
+                        CREATE
+                           TRIGGER " . charreplace($objectClass) . "_update_trigger BEFORE UPDATE
+                           ON " . charreplace($objectClass) . " FOR EACH ROW BEGIN
+                               DECLARE xx INT DEFAULT 1;
+                               DECLARE numcols INT DEFAULT (
+                                                            SELECT COUNT(*)
+                                                              FROM information_schema.COLUMNS
+                                                             WHERE TABLE_NAME = " . charreplace($objectClass) . "
+                                                           );
+                               WHILE (xx < numcols) DO
+                                 DECLARE CONCAT('column',xx) VARCHAR 250;
+                                 SET CONCAT('column',xx) = SELECT COLUMN_NAME
+                                                             FROM information_schema.COLUMNS
+                                                            WHERE TABLE_NAME = " . charreplace($objectClass) . "
+                                                            LIMIT 1
+                                                           OFFSET xx - 1;
+                                 IF NOT (
+                                         SELECT COLUMN_NAME
+                                           FROM information_schema.COLUMNS
+                                          WHERE TABE_NAME = " . charreplace($objectClass) . "
+                                            AND COLUMN_NAME = CONCAT('column',xx)
+                                        )
+                                 THEN (
+                                       ALTER TABLE __archive
+                                               ADD (
+                                                    SELECT COLUMN_NAME
+                                                      FROM information_schema.COLUMNS
+                                                     WHERE TABLE_NAME = " . charreplace($objectClass) . "
+                                                     LIMIT 1
+                                                    OFFSET xx - 1
+                                                   )
+                                                   (
+                                                    SELECT DATA_TYPE
+                                                      FROM information_schema.COLUMNS
+                                                     WHERE TABLE_NAME = " . charreplace($objectClass) . "
+                                                     LIMIT 1
+                                                    OFFSET xx - 1
+                                                   )
+                                                   (
+                                                    SELECT CHARACTER_MAXIMUM_LENGTH
+                                                      FROM information_schema.COLUMNS
+                                                     WHERE TABLE_NAME = " . charreplace($objectClass) . "
+                                                     LIMIT 1
+                                                    OFFSET xx - 1
+                                                   ) NULL;
+                                 END IF;
+                               END WHILE;
+                               INSERT INTO __archive (
+                                                      SELECT *
+                                                        FROM " . charreplace($objectClass) . "
+                                                       WHERE OLD." . charreplace($objectClass) . "_ID = " . charreplace($objectClass) . "_ID
+                                                     );
+                           END||";
+      dbquery_func($avarice_admin_connection, $trigger_query, "on");
     } else {
       $field_list_result =  dbquery_func($avarice_admin_connection, "SHOW COLUMNS FROM " . $avarice_admin_connection['db_name'] . "." . charreplace($objectClass));
       $fields_exist_details = array();
