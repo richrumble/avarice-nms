@@ -25,7 +25,7 @@
  +--------------------------------------------------------------------------+
 */
 
-$self = array();
+$self = array("ScanStarted" => date('Y-m-d H:i:s', microtime(true)));
 
 include_once("../../include/config.php");
 
@@ -38,10 +38,10 @@ $query = "
           SELECT template
             FROM inv__config_templates
            WHERE templateID = 1";
-$template = mysql_result(dbquery_func($avarice_user_connection, $query), 0, 0);
-
-$template_xml = simplexml_load_string($template);
-$wmi_information = array();
+$template         = mysql_result(dbquery_func($avarice_user_connection, $query), 0, 0);
+$template_xml     = simplexml_load_string($template);
+$return_xml_array = array("asset" => array());
+$wmi_information  = array();
 foreach ($template_xml->asset->property as $property) {
   if ($property['method'] == "wmi") {
     if (!in_array((string)$property['namespace'], array_keys($wmi_information))) {
@@ -72,8 +72,6 @@ foreach ($template_xml->asset->category as $category) {
   };
 };
 
-$self['time_start'] = microtime(true);
-
 foreach($wmi_information as $key => $value) {
   $obj = new COM('winmgmts:{impersonationLevel=impersonate}//./root/cimv2');
   $query = "SELECT * FROM " . $key;
@@ -88,9 +86,35 @@ foreach($wmi_information as $key => $value) {
   };
 };
 
-$self['time_end'] = microtime(true);
+$self['ScanEnded'] = date('Y-m-d H:i:s', microtime(true));
 
-print_r($self);
-print_r($wmi_information);
+foreach ($template_xml->asset->property as $property) {
+  if ($property['method'] == "wmi") {
+    $return_xml_array['asset'][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][0][(string)$property['property']];
+  } else if ($property['method'] == "self") {
+    $return_xml_array['asset'][(string)$property['name']] = $self[(string)$property['name']];
+  };
+};
+foreach ($template_xml->asset->category as $category) {
+  $return_xml_array['asset'][(string)$category['name']] = array();
+  if ($category['type'] == "single") {
+    foreach ($category->property as $property) {
+      if ($property['method'] == "wmi") {
+        $return_xml_array['asset'][(string)$category['name']][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][0][(string)$property['property']];
+      };
+    };
+ // } else if ($category['type'] = "multiple") {
+ //   $x = 0;
+ //   foreach ($category->instance->property as $property) {
+ //     $category_template = array();
+ //     if ($property['method'] == "wmi") {
+ //       $wmi_information[(string)$property['namespace']]['props'][] = (string)$property['property'];
+ //     };
+ //     $x++;
+ //   };
+  };
+};
+
+print_r($return_xml_array);
 
 ?>
