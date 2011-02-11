@@ -25,6 +25,26 @@
  +--------------------------------------------------------------------------+
 */
 
+// Function to create xml from results array
+function resultxml ($array, $pad = 1) {
+  $return = "";
+  foreach ($array as $key => $value) {
+    if (is_array($value)) {
+      if (is_numeric($key)) {
+        $key = "instance";
+      };
+      $return .= str_repeat(" ", $pad) . "<" . $key . ">\r\n";
+      $pad++;
+      $return .= resultxml($value, $pad);
+      $pad--;
+      $return .= str_repeat(" ", $pad) . "</" . $key . ">\r\n";
+    } else {
+      $return .= str_repeat(" ", $pad) . "<" . $key . ">" . $value . "</" . $key . ">\r\n";
+    };
+  };
+  return $return;
+};
+
 $self = array("ScanStarted" => date('Y-m-d H:i:s', microtime(true)));
 
 include_once("../../include/config.php");
@@ -103,18 +123,27 @@ foreach ($template_xml->asset->category as $category) {
         $return_xml_array['asset'][(string)$category['name']][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][0][(string)$property['property']];
       };
     };
- // } else if ($category['type'] = "multiple") {
- //   $x = 0;
- //   foreach ($category->instance->property as $property) {
- //     $category_template = array();
- //     if ($property['method'] == "wmi") {
- //       $wmi_information[(string)$property['namespace']]['props'][] = (string)$property['property'];
- //     };
- //     $x++;
- //   };
+  } else if ($category['type'] = "multiple") {
+    foreach ($category->instance->property as $property) {
+      if ($property['method'] == "wmi") {
+        for ($x = 0; $x < count($wmi_information[(string)$property['namespace']]['result']); $x++) {
+          if (!isset($return_xml_array['asset'][(string)$category['name']][$x])) {
+            $return_xml_array['asset'][(string)$category['name']][$x] = array();
+          };
+          $return_xml_array['asset'][(string)$category['name']][$x][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][$x][(string)$property['property']];
+        };
+      };
+    };
   };
 };
 
-print_r($return_xml_array);
+$query = "
+          SELECT value
+            FROM inv__config_misc
+           WHERE parameter = 'xml_path'";
+$xml_dir = mysql_result(dbquery_func($avarice_user_connection, $query), 0, 0);
+$filename = $xml_dir . "\\" . date('YmdHis') . $_SERVER['COMPUTERNAME'] . ".xml";
+$data     = "<inventory>\r\n" . resultxml($return_xml_array) . "</inventory>";
+file_put_contents($filename, $data);
 
 ?>
