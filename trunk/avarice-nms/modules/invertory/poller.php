@@ -64,45 +64,56 @@ $return_xml_array = array("asset" => array());
 $wmi_information  = array();
 foreach ($template_xml->asset->property as $property) {
   if ($property['method'] == "wmi") {
-    if (!in_array((string)$property['namespace'], array_keys($wmi_information))) {
-      $wmi_information[(string)$property['namespace']] = array("props" => array());
+    if (!in_array((string)$property['root'], array_keys($wmi_information))) {
+      $wmi_information[(string)$property['root']] = array();
     };
-    $wmi_information[(string)$property['namespace']]['props'][] = (string)$property['property'];
+    if (!in_array((string)$property['namespace'], array_keys($wmi_information[(string)$property['root']]))) {
+      $wmi_information[(string)$property['root']][(string)$property['namespace']] = array("props" => array());
+    };
+    $wmi_information[(string)$property['root']][(string)$property['namespace']]['props'][] = (string)$property['property'];
   };
 };
 foreach ($template_xml->asset->category as $category) {
   if ($category['type'] == "single") {
     foreach ($category->property as $property) {
       if ($property['method'] == "wmi") {
-        if (!in_array((string)$property['namespace'], array_keys($wmi_information))) {
-          $wmi_information[(string)$property['namespace']] = array("props" => array());
+        if (!in_array((string)$property['root'], array_keys($wmi_information))) {
+          $wmi_information[(string)$property['root']] = array();
         };
-        $wmi_information[(string)$property['namespace']]['props'][] = (string)$property['property'];
+        if (!in_array((string)$property['namespace'], array_keys($wmi_information[(string)$property['root']]))) {
+          $wmi_information[(string)$property['root']][(string)$property['namespace']] = array("props" => array());
+        };
+        $wmi_information[(string)$property['root']][(string)$property['namespace']]['props'][] = (string)$property['property'];
       };
     };
   } else if ($category['type'] = "multiple") {
     foreach ($category->instance->property as $property) {
       if ($property['method'] == "wmi") {
-        if (!in_array((string)$property['namespace'], array_keys($wmi_information))) {
-          $wmi_information[(string)$property['namespace']] = array("props" => array());
+        if (!in_array((string)$property['root'], array_keys($wmi_information))) {
+          $wmi_information[(string)$property['root']] = array();
         };
-        $wmi_information[(string)$property['namespace']]['props'][] = (string)$property['property'];
+        if (!in_array((string)$property['namespace'], array_keys($wmi_information[(string)$property['root']]))) {
+          $wmi_information[(string)$property['root']][(string)$property['namespace']] = array("props" => array());
+        };
+        $wmi_information[(string)$property['root']][(string)$property['namespace']]['props'][] = (string)$property['property'];
       };
     };
   };
 };
 
-foreach($wmi_information as $key => $value) {
-  $obj = new COM('winmgmts:{impersonationLevel=impersonate}//./root/cimv2');
-  $query = "SELECT * FROM " . $key;
-  $result = $obj->ExecQuery($query);
-  $wmi_information[$key]['result'] = array();
-  foreach ($result as $resvalue) {
-    $resarray = array();
-    foreach ($value['props'] as $prop) {
-      $resarray[$prop] = (string)$resvalue->$prop;
+foreach($wmi_information as $root => $namespaces) {
+  $obj = new COM($root);
+  foreach ($namespaces as $namespace => $value) {
+    $query = "SELECT * FROM " . $namespace;
+    $result = $obj->ExecQuery($query);
+    $wmi_information[$root][$namespace]['result'] = array();
+    foreach ($result as $resvalue) {
+      $resarray = array();
+      foreach ($value['props'] as $prop) {
+        $resarray[$prop] = (string)$resvalue->$prop;
+      };
+      $wmi_information[$root][$namespace]['result'][] = $resarray;
     };
-    $wmi_information[$key]['result'][] = $resarray;
   };
 };
 
@@ -110,7 +121,7 @@ $self['ScanEnded'] = date('Y-m-d H:i:s', microtime(true));
 
 foreach ($template_xml->asset->property as $property) {
   if ($property['method'] == "wmi") {
-    $return_xml_array['asset'][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][0][(string)$property['property']];
+    $return_xml_array['asset'][(string)$property['name']] = $wmi_information[(string)$property['root']][(string)$property['namespace']]['result'][0][(string)$property['property']];
   } else if ($property['method'] == "self") {
     $return_xml_array['asset'][(string)$property['name']] = $self[(string)$property['name']];
   };
@@ -120,17 +131,17 @@ foreach ($template_xml->asset->category as $category) {
   if ($category['type'] == "single") {
     foreach ($category->property as $property) {
       if ($property['method'] == "wmi") {
-        $return_xml_array['asset'][(string)$category['name']][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][0][(string)$property['property']];
+        $return_xml_array['asset'][(string)$category['name']][(string)$property['name']] = $wmi_information[(string)$property['root']][(string)$property['namespace']]['result'][0][(string)$property['property']];
       };
     };
   } else if ($category['type'] = "multiple") {
     foreach ($category->instance->property as $property) {
       if ($property['method'] == "wmi") {
-        for ($x = 0; $x < count($wmi_information[(string)$property['namespace']]['result']); $x++) {
+        for ($x = 0; $x < count($wmi_information[(string)$property['root']][(string)$property['namespace']]['result']); $x++) {
           if (!isset($return_xml_array['asset'][(string)$category['name']][$x])) {
             $return_xml_array['asset'][(string)$category['name']][$x] = array();
           };
-          $return_xml_array['asset'][(string)$category['name']][$x][(string)$property['name']] = $wmi_information[(string)$property['namespace']]['result'][$x][(string)$property['property']];
+          $return_xml_array['asset'][(string)$category['name']][$x][(string)$property['name']] = $wmi_information[(string)$property['root']][(string)$property['namespace']]['result'][$x][(string)$property['property']];
         };
       };
     };
