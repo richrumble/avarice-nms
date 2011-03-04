@@ -49,11 +49,11 @@ function submit_result($method, $path, $filename, $data) {
   if ($method == "filesystem") {
     $file = $path . "/" . $filename;
     if (@file_put_contents($file, $data) === FALSE) {
-      file_put_contents(dirname(__FILE__) . "/" . $filename);
+      file_put_contents(dirname(__FILE__) . "/" . $filename, $data);
     };
   } else if ($method == "http") {
     $context = stream_context_create(array("http" => array("method"  => "POST",
-                                                           "header"  => "Content-type: application/x-www-urlencoded\r\n",
+                                                           "header"  => "Content-type: application/x-www-form-urlencoded",
                                                            "content" => http_build_query(array("xml_result" => $data,
                                                                                                "filename"   => $filename,
                                                                                                "action"     => "submit_results")),
@@ -86,7 +86,7 @@ $os_details = array("os"      => php_uname('s'),
                     "release" => php_uname('r'),
                     "version" => php_uname('v'));
 
-$template_check = file_get_contents($config['URL'] . "?" . str_replace(" ", "+", "action=templatecheck&os=" . $os_details['os'] . "&release=" . $os_details['release'] . "&version=" . $os_details['version'] . "&hash=" . $template_hash));
+$template_check = file_get_contents($config['http_path'] . "?" . str_replace(" ", "+", "action=templatecheck&os=" . $os_details['os'] . "&release=" . $os_details['release'] . "&version=" . $os_details['version'] . "&hash=" . $template_hash));
 if (!empty($template_check)) {
   file_put_contents(dirname(__FILE__) . "/template.xml", $template_check);
 };
@@ -191,7 +191,7 @@ submit_result($config['method'], $config[$config['method'] . "_path"], $filename
 $local_path = dir(dirname(__FILE__));
 while (FALSE !== ($file = $local_path->read())) {
   if (is_numeric(substr($file, 0, 8)) and substr($file, -4) == ".xml") {
-    submit_result($config['method'], $config[$config['method'] . "_path"], $file, file_get_contents(dirname(__FILE__) . "/" . $file);
+    submit_result($config['method'], $config[$config['method'] . "_path"], $file, file_get_contents(dirname(__FILE__) . "/" . $file));
   };
 };
 

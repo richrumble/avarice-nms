@@ -1,0 +1,58 @@
+<inventory>
+ <asset>
+  <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="CIM_ComputerSystem" property="Name" name="name" />
+  <property method="self" name="ScanStarted" />
+  <property method="self" name="ScanEnded" />
+  <category name="harddrive" type="multiple">
+   <instance>
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="Description" name="description" />
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="DeviceID" name="deviceid" />
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="Name" name="name" />
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="ProviderName" name="providername" />
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="Size" name="size" />
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="VolumeName" name="volumename" />
+    <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_LogicalDisk" property="VolumeSerialNumber" name="volumeserialnumber" />
+   </instance>
+  </category>
+  <category name="operatingsystem" type="single">
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="Caption" name="caption" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="CountryCode" name="countrycode" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="CSDVersion" name="csdversion" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="CSName" name="csname" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="CurrentTimeZone" name="currenttimezone" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="InstallDate" name="installdate" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="LastBootUpTime" name="lastbootuptime" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="LocalDateTime" name="localdatetime" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="Locale" name="locale" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="Name" name="name" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="Organization" name="organization" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="OSLanguage" name="oslanguage" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="OSProductSuite" name="osproductsuite" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="OSType" name="ostype" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="ProductType" name="producttype" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="RegisteredUser" name="registereduser" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="SerialNumber" name="serialnumber" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="ServicePackMajorVersion" name="servicepackmajorversion" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="ServicePackMinorVersion" name="servicepackminorversion" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="Version" name="version" type="general" />
+  </category>
+  <category name="computer" type="single">
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="Caption" name="caption" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="CurrentTimeZone" name="currenttimezone" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="DaylightInEffect" name="daylightineffect" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="Description" name="description" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="Domain" name="domain" type="normalized" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="DomainRole" name="domainrole" type="normalized" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="Manufacturer" name="manufacturer" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="Model" name="model" type="general" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="Name" name="name" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="PrimaryOwnerContact" name="primaryownercontact" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="PrimaryOwnerName" name="primaryownername" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="SystemDrive" name="systemdrive" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="TotalPhysicalMemory" name="totalphysicalmemory" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="TotalVirtualMemorySize" name="totalvirtualmemorysize" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_OperatingSystem" property="TotalVisibleMemorySize" name="totalvisiblememorysize" />
+   <property method="wmi" root="winmgmts:{impersonationLevel=impersonate}//./root/cimv2" namespace="Win32_ComputerSystem" property="UserName" name="username" />
+  </category>
+ </asset>
+</inventory>
