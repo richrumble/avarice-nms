@@ -45,6 +45,25 @@ function resultxml ($array, $pad = 1) {
   return $return;
 };
 
+function submit_result($method, $path, $filename, $data) {
+  if ($method == "filesystem") {
+    $file = $path . "/" . $filename;
+    if (@file_put_contents($file, $data) === FALSE) {
+      file_put_contents(dirname(__FILE__) . "/" . $filename);
+    };
+  } else if ($method == "http") {
+    $context = stream_context_create(array("http" => array("method"  => "POST",
+                                                           "header"  => "Content-type: application/x-www-urlencoded\r\n",
+                                                           "content" => http_build_query(array("xml_result" => $data,
+                                                                                               "filename"   => $filename,
+                                                                                               "action"     => "submit_results")),
+                                                           "timeout" => 10)));
+    if (@file_get_contents($path, FALSE, $context) === FALSE) {
+      file_put_contents(dirname(__FILE__) . "/" . $filename);
+    };
+  };
+};
+
 // Reads Config file and sets parameters given
 $config_raw = file(dirname(__FILE__) . "/poller.config");
 $config     = array();
@@ -164,8 +183,31 @@ foreach ($template_xml->asset->category as $category) {
   };
 };
 
-$filename = $config['XML_Dir'] . "\\" . date('YmdHis') . $_SERVER['COMPUTERNAME'] . ".xml";
-$data     = "<inventory>\r\n" . resultxml($return_xml_array) . "</inventory>";
-file_put_contents($filename, $data);
+$data = "<inventory>\r\n" . resultxml($return_xml_array) . "</inventory>";
+$filename = date('YmdHis') . $_SERVER['COMPUTERNAME'] . ".xml";
+
+submit_result($config['method'], $config[$config['method'] . "_path"], $filename, $data);
+
+$local_path = dir(dirname(__FILE__));
+while (FALSE !== ($file = $local_path->read())) {
+  if (is_numeric(substr($file, 0, 8)) and substr($file, -4) == ".xml") {
+    submit_result($config['method'], $config[$config['method'] . "_path"], $file, file_get_contents(dirname(__FILE__) . "/" . $file);
+  };
+};
 
 ?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
