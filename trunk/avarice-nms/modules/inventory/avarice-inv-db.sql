@@ -16,21 +16,42 @@ SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `inv__config_misc`
+-- Table structure for table `inv__config_client`
 --
 
-CREATE TABLE IF NOT EXISTS `inv__config_misc` (
+CREATE TABLE IF NOT EXISTS `inv__config_client` (
   `parameter` varchar(128) NOT NULL,
   `value` varchar(255) NOT NULL,
   PRIMARY KEY (`parameter`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dumping data for table `inv__config_misc`
+-- Dumping data for table `inv__config_client`
 --
 
-INSERT INTO `inv__config_misc` (`parameter`, `value`) VALUES
-('xml_path', 'C:\\wamp\\www\\avarice_nms_svn\\modules\\invertory\\xml');
+INSERT INTO `inv__config_client` (`parameter`, `value`) VALUES
+('method', 'http'),
+('url', 'http://localhost/avarice_nms_svn/modules/inventory/checkin.php'),
+('xml_path', '\\\\in2079.et.local\\c$\\wamp\\www\\avarice_nms_svn\\modules\\invertory\\xml');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inv__config_server`
+--
+
+CREATE TABLE IF NOT EXISTS `inv__config_server` (
+  `parameter` varchar(128) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`parameter`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `inv__config_server`
+--
+
+INSERT INTO `inv__config_server` (`parameter`, `value`) VALUES
+('xml_path', 'c:\\wamp\\www\\avarice_nms_svn\\modules\\invertory\\xml');
 
 -- --------------------------------------------------------
 
