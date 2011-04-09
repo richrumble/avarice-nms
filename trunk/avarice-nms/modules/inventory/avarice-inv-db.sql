@@ -80,6 +80,28 @@ INSERT INTO `inv__config_templates` (`templateID`, `hash_ID`, `os`, `release`, `
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `inv__dataprocessing`
+--
+
+CREATE TABLE IF NOT EXISTS `inv__dataprocessing` (
+  `submittedDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdDate` date NOT NULL DEFAULT '0000-00-00',
+  `assetName` varchar(128) NOT NULL,
+  `data` longtext NOT NULL,
+  `statusID` tinyint(4) NOT NULL DEFAULT '1',
+  `processDate` timestamp NULL DEFAULT '0000-00-00 00:00:00',
+  KEY `statusID` (`statusID`),
+  KEY `submittedDate` (`submittedDate`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dumping data for table `inv__dataprocessing`
+--
+
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `inv__hash`
 --
 
@@ -102,9 +124,37 @@ INSERT INTO `inv__hash` (`hash_ID`, `hash`) VALUES
 -- Constraints for dumped tables
 --
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `inv__processstatus`
+--
+
+CREATE TABLE IF NOT EXISTS `inv__processstatus` (
+  `statusID` tinyint(4) NOT NULL AUTO_INCREMENT,
+  `status` varchar(24) NOT NULL,
+  PRIMARY KEY (`statusID`)
+) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5 ;
+
+--
+-- Dumping data for table `inv__processstatus`
+--
+
+INSERT INTO `inv__processstatus` (`statusID`, `status`) VALUES
+(1, 'New'),
+(2, 'Processing'),
+(3, 'Error'),
+(4, 'Complete');
+
 --
 -- Constraints for table `inv__config_templates`
 --
 ALTER TABLE `inv__config_templates`
   ADD CONSTRAINT `inv__config_templates_ibfk_1` FOREIGN KEY (`hash_ID`) REFERENCES `inv__hash` (`hash_ID`);
+
+--
+-- Constraints for table `inv__dataprocessing`
+--
+ALTER TABLE `inv__dataprocessing`
+  ADD CONSTRAINT `inv__dataprocessing_ibfk_1` FOREIGN KEY (`statusID`) REFERENCES `inv__processstatus` (`statusID`);
 
