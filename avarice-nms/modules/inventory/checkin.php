@@ -19,7 +19,11 @@ if (!empty($form_data['action'])) {
       print $result['template'];
     };
   } else if ($form_data['action'] == "submit_results") {
-    file_put_contents(INV_CONF_XML_PATH . "/" . $form_data['filename'], $form_data['xml_result']);
+    $query = "
+              INSERT INTO inv__dataprocessing
+                          (createdDate, assetName, data)
+                   VALUES ('" . substr($form_data['filename'], 0, 4) . "-" . substr($form_data['filename'], 4, 2) . "-" . substr($form_data['filename'], 6, 2) . "', '" . substr($form_data['filename'], 8, -4) . "', '" . $form_data['xml_result'] . "');";
+    dbquery_func($avarice_admin_connection, $query);
   };
 };
 ?>
