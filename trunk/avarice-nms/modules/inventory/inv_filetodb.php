@@ -1,5 +1,9 @@
 <?php
 
+include_once("../../include/config.php");
+include_once("inv_functions.php");
+include_once("inv_config.php");
+
 $result = dbquery_func($avarice_user_connection, "SELECT value FROM inv__config_server WHERE parameter = 'xml_path'");
 $xml_path_string = mysql_result($result, 0, 0);
 $xml_path = dir($xml_path_string);
