@@ -16,7 +16,7 @@ $avarice_admin_connection = array("db_type"  => "mysql",
                                   "username" => "avarice_admin",
                                   "password" => "KcQMFBQZFpmP9tmu");
 
-function dbquery_func($connection_info, $query, $debug="off") {
+function dbquery_func_old($connection_info, $query, $debug="off") {
   if ($connection_info['db_type'] == "mysql") {
     mysql_connect($connection_info['db_host'] . ":" . $connection_info['db_port'], $connection_info['username'], $connection_info['password']) or die("Unable to connect to " . $connection_info['db_host']);
     mysql_select_db($connection_info['db_name']) or die("Unable to select database " . $connection_info['db_name']);
@@ -43,7 +43,7 @@ function dbquery_func($connection_info, $query, $debug="off") {
   return $return;
 };
 
-function dbquery_func_new($connection_info, $query, $debug) {
+function dbquery_func($connection_info, $query, $debug) {
   if ($connection_info['db_type'] == "mysql") {
     if (!is_array($query)) {
       return FALSE;
