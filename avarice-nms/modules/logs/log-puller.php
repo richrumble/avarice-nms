@@ -8,7 +8,9 @@ $objects_array = array(
 	"Category"         => "string",
 	"CategoryString"   => "string",
 	"ComputerName"     => "string",
-	"EventCode"        => "string",
+//	"Data"             => "array", // --- "Data" needs to be converted from Decimal to Ascii (using CHR http://php.net/manual/en/function.chr.php)
+// --- This "Data" will need a place in the DB as well, we'll add this support soon.
+	"EventCode"        => "string", 
 	"EventIdentifier"  => "string",
 	"EventType"        => "string",
 	"Logfile"          => "string",
