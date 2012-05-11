@@ -1,5 +1,6 @@
 <?php
 
+date_default_timezone_set('America/Indiana/Indianapolis');
 $form_data = $_REQUEST;
 if (empty($form_data['action'])) {
 ?>
@@ -59,14 +60,14 @@ if (empty($form_data['action'])) {
 			<hr />";
 	
 	$query = "Select * from Win32_NTEventLogFile Where";
-	if (!isset($form_data['machine']) {
+	if (!isset($form_data['machine'])) {
 		$form_data['machine'] = ".";
 	};
 	if ($form_data['logfile'] != "all") {
 		$query .= " LogFileName = '" . $form_data['logfile'] . "' AND";
 	};
 	
-	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timefram'])) . "'";
+	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
 	
 	$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $form_data['machine'] . "\\root\\cimv2");
 	$LoggedEvents = $objWMIService->ExecQuery($query);
@@ -80,8 +81,10 @@ if (empty($form_data['action'])) {
 		$output .= "Time Written: " . $objEvent->TimeWritten . "<br />";
 		$output .= "Event Type: " . $objEvent->Type . "<br />";
 		$output .= "User: " . $objEvent->User . "<br />";
-		$output .= "<hr />"
+		$output .= "<hr />";
 	};
+	print $query . "<br />";
+	print $output;
 };
 
 ?>
