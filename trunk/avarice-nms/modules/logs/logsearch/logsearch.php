@@ -64,7 +64,7 @@ if (empty($form_data['action'])) {
 		$form_data['machine'] = ".";
 	};
 	if ($form_data['logfile'] != "all") {
-		$query .= " LogFileName = '" . $form_data['logfile'] . "' AND";
+		$query .= " LogFileName = '" . $form_data['logfile'] . "' and";
 	};
 	
 	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
