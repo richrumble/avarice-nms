@@ -1,4 +1,4 @@
-body{background: #000000; font-family:Arial,Helvetica,sans-serif; font-weight:400;}
+body{background: #000000; font-family:Arial,Helvetica,sans-serif; font-weight:400; color:#fff;}
 div{border:0 none;margin:0;padding:0;}
 /*Css triangle's b*tch! */
 .arrow-border-btm  {border-color:#2A551D transparent transparent;border-style:solid;border-width:14px;height:0;left:114px;position:absolute;width:0;}
@@ -15,6 +15,7 @@ b.r5{margin: 0 1px; height: 2px;}
 .cell {margin: 0 0;padding:1px 0 1px;display:inline-block;;border-left:6px solid #2A551D;border-right:6px solid #2A551D;}
 form{border:0 none;margin:0;padding:0;}
 p,ul,ol{color:#aaaaaa; padding:0 2px 0 10px;}
+
 a img {border: 0px;}
 fieldset{border:0 none;}
 .header{background:transparent;margin:0;padding:0;}
@@ -33,7 +34,7 @@ fieldset{border:0 none;}
 .header #search #search_header{background:transparent url(../img/search.png) no-repeat scroll 0 0;border:0 none;font-size:90%;font-style:normal;font-variant:normal;font-weight:700;height:40px;line-height:100%;margin:10px 0;padding:0;position:absolute;right:5%;top:0;width:200px;}
 .header #search #search_input{border:0 none;line-height:90%;margin:5px 15px;padding:0;width:164px; background:transparent none no-repeat scroll 0 0;color:#fff; font-size: 14pt;}
 .left_column{float:left;margin-top:12px;max-width:240px;}
-h3{color:#9A5E2C;padding:0 0 0 10px;}
+h3{color:#9A5E2C;padding:0; margin: 15px 0 0;}
 .main{color:#ccc;margin:12px 0 0 255px;min-width:800px;}
 .main-only{color:#ccc;margin:12px 0 0 0px;min-width:800px;}
 .main-only h1, .main h1{color:#215D9C;margin:0;padding:5px 10px 0;}
@@ -48,3 +49,5 @@ h3{color:#9A5E2C;padding:0 0 0 10px;}
 .line_num {}
 .hex {}
 .plain_text {}
+label.creds{color:#fff; font-weight:400; padding: 0px;}
+input {padding: 0 45px 0 0;}
