@@ -59,12 +59,12 @@ if (empty($form_data['action'])) {
 			<h1>Results:</h1>
 			<hr />";
 	
-	$query = "Select * from Win32_NTEventLogFile Where";
+	$query = "Select * from Win32_NTLogEvent Where";
 	if (!isset($form_data['machine'])) {
 		$form_data['machine'] = ".";
 	};
 	if ($form_data['logfile'] != "all") {
-		$query .= " LogFileName = '" . $form_data['logfile'] . "' and";
+		$query .= " LogFile = '" . $form_data['logfile'] . "' and";
 	};
 	
 	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
