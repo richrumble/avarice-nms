@@ -115,7 +115,7 @@ if (empty($form_data['action'])) {
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
 		$output .= "Computer: " . $computer . "<br />";
-		if ($computer = "." or (empty($form_data['user']) and empty($form_data['pass']))) {
+		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
 			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
 		} else {
 			$obj = new COM('WbemScripting.SWbemLocator');
