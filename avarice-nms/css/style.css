@@ -49,5 +49,7 @@ h3{color:#9A5E2C;padding:0; margin: 15px 0 0;}
 .line_num {}
 .hex {}
 .plain_text {}
-label.creds{color:#fff; font-weight:400; padding: 0px;}
-input {padding: 0 45px 0 0;}
+label.creds{color:#fff; font-weight:400;padding: 0 0 0 5px;;}
+form.formtodiv fieldset label input{padding: 2px; margin: 1px 2px 3px 5px;}
+form.formtodiv fieldset input{padding: 0; margin: 0 5px 10px;}
+form.formtodiv fieldset label input.right{margin: 0 5px;padding: 0;}
