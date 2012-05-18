@@ -101,7 +101,7 @@ if (empty($form_data['action'])) {
 		<h1>Results:</h1>
 		<hr />";
 	$output .= $form_data['fqdn'] . "<br />";
-	if (!isset($form_data['fqdn'])) {
+	if (empty($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
 	$computers = explode(",", $form_data['fqdn']);
@@ -124,7 +124,7 @@ if (empty($form_data['action'])) {
 		$LoggedEvents = $objWMIService->ExecQuery($query);
 		foreach ($LoggedEvents as $objEvent) {
 			$output .= "Category: " . $objEvent->Category . "<br />";
-			$output .= "Computer Name: " . $objEvent->ComputerName . "<br />";
+			$output .= "Computer Name: " . 	$objEvent->ComputerName . "<br />";
 			$output .= "Event Code: " . $objEvent->EventCode . "<br />";
 			$output .= "Log File: " . $objEvent->LogFile . "<br />";
 			$output .= "Message: " . $objEvent->Message . "<br />";
