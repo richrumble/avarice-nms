@@ -119,7 +119,7 @@ if (empty($form_data['action'])) {
 			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
 		} else {
 			$obj = new COM('WbemScripting.SWbemLocator');
-			$objWMIService = $obj->ConnectServer($strComputer, '/root/cimv2', $user, $password);
+			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $user, $pass);
 		};
 		$LoggedEvents = $objWMIService->ExecQuery($query);
 		foreach ($LoggedEvents as $objEvent) {
