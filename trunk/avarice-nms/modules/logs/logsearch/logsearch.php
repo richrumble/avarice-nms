@@ -39,11 +39,11 @@ if (empty($form_data['action'])) {
      <fieldset>
       <legend>Event Log Search</legend>
       <label class="creds">FQDN or IP Target(s) | (csv)</label>
-       <input type=\"text\" name=\"fqdn\" /> <br />
+       <input type="text" name="fqdn" /> <br />
       <label class="creds">Username (domain\user)</label>
-       <input type=\"text\" name=\"user\" /> <br />
+       <input type="text" name="user" /> <br />
       <label class="creds">Password </label>
-       <input type=\"password\" name=\"pass\" /> <br />
+       <input type="password" name="pass" /> <br />
       <input type = "hidden" name = "action" value = "search" />
       <h3>Choose Log(s)</h3>
       <label>
@@ -100,6 +100,7 @@ if (empty($form_data['action'])) {
 	$output = "
 		<h1>Results:</h1>
 		<hr />";
+	$output .= $form_data['fqdn'] . "<br />";
 	if (!isset($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
