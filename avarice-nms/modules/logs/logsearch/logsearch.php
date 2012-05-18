@@ -97,34 +97,46 @@ if (empty($form_data['action'])) {
 
 <?php
 } else if ($form_data['action'] == "search") {
-  $output = "
-      <h1>Results:</h1>
-      <hr />";
-  $query = "Select * from Win32_NTLogEvent Where";
-  if (!isset($form_data['fqdn'])) {
-    $form_data['fqdn'] = ".";
-  };
-  if ($form_data['logfile'] != "all") {
-    $query .= " LogFile = '" . $form_data['logfile'] . "' and";
-  };
-  $query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
-  $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $form_data['fqdn'] . "\\root\\cimv2");
-  $LoggedEvents = $objWMIService->ExecQuery($query);
-  foreach ($LoggedEvents as $objEvent) {
-    $output .= "Category: " . $objEvent->Category . "<br />";
-    $output .= "Computer Name: " . $objEvent->ComputerName . "<br />";
-    $output .= "Event Code: " . $objEvent->EventCode . "<br />";
-    $output .= "Log File: " . $objEvent->LogFile . "<br />";
-    $output .= "Message: " . $objEvent->Message . "<br />";
-    $output .= "Record Number: " . $objEvent->RecordNumber . "<br />";
-    $output .= "Source Name: " . $objEvent->SourceName . "<br />";
-    $output .= "Time Written: " . $objEvent->TimeWritten . "<br />";
-    $output .= "Event Type: " . $objEvent->Type . "<br />";
-    $output .= "User: " . $objEvent->User . "<br />";
-    $output .= "<hr />";
-  };
-  print $query . "<br />";
-  print $output;
+	$output = "
+		<h1>Results:</h1>
+		<hr />";
+	if (!isset($form_data['fqdn'])) {
+		$form_data['fqdn'] = ".";
+	};
+	$computers = explode(",", $form_data['fqdn']);
+	
+	$query = "Select * from Win32_NTLogEvent Where";
+	if ($form_data['logfile'] != "all") {
+		$query .= " LogFile = '" . $form_data['logfile'] . "' and";
+	};
+	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+	
+	foreach ($computers as $computer) {
+		$computer = trim($computer);
+		$output .= "Computer: " . $computer . "<br />";
+		if ($computer = "." or (empty($form_data['user']) and empty($form_data['pass']))) {
+			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
+		} else {
+			$obj = new COM('WbemScripting.SWbemLocator');
+			$objWMIService = $obj->ConnectServer($strComputer, '/root/cimv2', $user, $password);
+		};
+		$LoggedEvents = $objWMIService->ExecQuery($query);
+		foreach ($LoggedEvents as $objEvent) {
+			$output .= "Category: " . $objEvent->Category . "<br />";
+			$output .= "Computer Name: " . $objEvent->ComputerName . "<br />";
+			$output .= "Event Code: " . $objEvent->EventCode . "<br />";
+			$output .= "Log File: " . $objEvent->LogFile . "<br />";
+			$output .= "Message: " . $objEvent->Message . "<br />";
+			$output .= "Record Number: " . $objEvent->RecordNumber . "<br />";
+			$output .= "Source Name: " . $objEvent->SourceName . "<br />";
+			$output .= "Time Written: " . $objEvent->TimeWritten . "<br />";
+			$output .= "Event Type: " . $objEvent->Type . "<br />";
+			$output .= "User: " . $objEvent->User . "<br />";
+			$output .= "<hr />";
+		};
+		print $query . "<br />";
+	};
+	print $output;
 };
 
 ?>
