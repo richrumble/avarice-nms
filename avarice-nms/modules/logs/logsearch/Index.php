@@ -17,15 +17,16 @@ if (empty($form_data['action'])) {
   <link rel="icon" href="img/favicon.ico" type="img/x-icon" />
   <script type = "text/javascript" src = "jquery-1.6.1.min.js"></script>
   <script type = "text/javascript" src = "form.js"></script>
+  <script type = "text/javascript" src = "highlight.js"></script>
  <!-- <script type = "text/javascript" src = "placeholder-support.js"></script> -->
  </head>
  <body>
   <div class="header">
    <div id="head_nav">
-    <ul>
-     <li><a href="index.php" class="nav"><span>Home</span></a></li>
+    <ul> 
+     <li><a href="index.php" class="active"><span>Home</span></a></li> <!-- class = active for the current page -->
      <li><a href="inventory.php" class="nav"><span>Inventory</span></a></li>
-     <li><a href="logsearch.php" class="active"><span>EVT Log</span></a></li> <!-- class = active for the current page -->
+     <li><a href="logsearch.php" class="nav"><span>EVT Log</span></a></li>
     </ul>
    </div> <!-- End Head-Nav Div -->
    <div id="search" class="noprint">
@@ -42,9 +43,9 @@ if (empty($form_data['action'])) {
     <b class="r0"></b> <b class="r1"></b> <b class="r2"></b> <b class="r3"></b> <b class="r4"></b>
    </b>
    <div class="cell">
-    <form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
+   <form class = "formtodiv" targetdiv = "results" action = "index.php" method = "POST">
      <fieldset>
-      <legend>Event Log Search</legend>
+      <legend>Computer Information</legend>
       <label class="creds">FQDN or IP Target(s) | (csv)</label>
        <input type="text" name="fqdn" placeholder="LocalHost" /> <br />
       <label class="creds">Username (domain\user)</label>
@@ -52,24 +53,6 @@ if (empty($form_data['action'])) {
       <label class="creds">Password </label>
        <input type="password" name="pass" /> <br />
       <input type = "hidden" name = "action" value = "search" />
-      <h3>Choose Log(s)</h3>
-      <label>
-       <input type = "radio" name = "logfile" value = "all" checked />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      </label>
-      <label>
-       <input class = "right" type = "radio" name = "logfile" value = "Application" />Application
-      </label><br />
-      <label>
-       <input type = "radio" name = "logfile" value = "Security" />Security
-      </label>
-      <label>
-       <input class = "right" type = "radio" name = "logfile" value = "System" />System
-      </label>
-      <h3>Timeframe</h3>
-      <label><input type = "radio" name = "timeframe" value = "-1 hour" checked />Last Hour&nbsp;</label>
-      <label><input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day</label><br />
-      <label><input type = "radio" name = "timeframe" value = "-1 week" />Last Week</label>
-      <label><input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month</label><br />
       <input type = "submit" value = "Search" />
      </fieldset>
     </form>
@@ -86,14 +69,7 @@ if (empty($form_data['action'])) {
    </b>
   <div class="cell">
    <div id = "results">
-   	<p>EVENT LOG SEARCH: Results will appear here. The default credentials being used are typically shown in the form, if nothing is shown 
-   		assume the credentials that this program is being run under are being used and the LocalHost is the Target. You can specify multiple
-   		hosts on the Target(s) form input by comma separating FQDN's or IP's. Unless you input a Username <b>and</b> Password the default 
-   		credentials will be used.
-   	</p>
-   	<p>Pagination, exporting/saving and filtering results are coming soon. Searching results can be accomplished by pressing ctrl+f like 
-   		in your browser. Monitoring and scheduling tasks is also on the horizon.
-    </p>
+   	<p>Results will appear here</p>
    </div> <!-- End Results Div -->
   </div> <!-- End Cell Div -->
     <b class="rbottom">
@@ -102,30 +78,25 @@ if (empty($form_data['action'])) {
   </div> <!-- End Main Div -->
    <div class="footer">
     <p>Contact us and stuff
-     <a href="http://jigsaw.w3.org/css-validator/check/referer"><img src="../../../img/w3c-css.png" alt="Valid CSS!" height="31" width="88" /></a>
-     <a href="http://validator.w3.org/check?uri=referer"><img src="../../../img/w3c-xhtml.png" alt="Valid XHTML 1.0 Transitional" height="31" width="88" /></a>
+     <a href="http://jigsaw.w3.org/css-validator/check/referer"><img src="./img/w3c-css.png" alt="Valid CSS!" height="31" width="88" /></a>
+     <a href="http://validator.w3.org/check?uri=referer"><img src="./img/w3c-xhtml.png" alt="Valid XHTML 1.0 Transitional" height="31" width="88" /></a>
     </p>
    </div> <!-- End Footer Div -->
  </body>
 </html>
-      
+     
 
 <?php
 } else if ($form_data['action'] == "search") {
 	$output = "
 		<h1>Results:</h1>
 		<hr />";
-	//$output .= $form_data['fqdn'] . "<br />";
+	$output .= $form_data['fqdn'] . "<br />";
 	if (empty($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
 	$computers = explode(",", $form_data['fqdn']);
-	
-	$query = "Select * from Win32_NTLogEvent Where";
-	if ($form_data['logfile'] != "all") {
-		$query .= " LogFile = '" . $form_data['logfile'] . "' and";
-	};
-	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+	$query = "Select * from Win32_UserAccount Where LocalAccount = True";
 	
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
@@ -134,25 +105,60 @@ if (empty($form_data['action'])) {
 			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
 		} else {
 			$obj = new COM('WbemScripting.SWbemLocator');
-			$obj->Security_->ImpersonationLevel=3; /* http://msdn.microsoft.com/en-us/library/windows/desktop/aa393787%28v=vs.85%29.aspx */
+			$obj->Security_->ImpersonationLevel=3;
 			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
 		};
 		$colItems=$objWMIService->ExecQuery($query);
 		foreach ($colItems as $objItem) {
-			$output .= "Category: " . $objItem->Category . "<br />";
-			$output .= "Computer Name: " . 	$objItem->ComputerName . "<br />";
-			$output .= "Event Code: " . $objItem->EventCode . "<br />";
-			$output .= "Log File: " . $objItem->LogFile . "<br />";
-			$output .= "Message: " . str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "<br />";
-			$output .= "Record Number: " . $objItem->RecordNumber . "<br />";
-			$output .= "Source Name: " . $objItem->SourceName . "<br />";
-			$output .= "Time Written: " . $objItem->TimeWritten . "<br />";
-			$output .= "Event Type: " . $objItem->Type . "<br />";
-			$output .= "User: " . $objItem->User . "<br />";
+      $output .= "AccountType " . $objItem->AccountType . "<br />";
+      $output .= "Caption " . $objItem->Caption . "<br />";
+      $output .= "Description " . $objItem->Description . "<br />";
+      $output .= "Disabled " . $objItem->Disabled . "<br />";
+      $output .= "Domain " . $objItem->Domain . "<br />";
+      $output .= "FullName " . $objItem->FullName . "<br />";
+      $output .= "InstallDate " . $objItem->InstallDate . "<br />";
+      $output .= "LocalAccount " . $objItem->LocalAccount . "<br />";
+      $output .= "Lockout " . $objItem->Lockout . "<br />";
+      $output .= "Name " . $objItem->Name . "<br />";
+      $output .= "PasswordChangeable " . $objItem->PasswordChangeable . "<br />";
+      $output .= "PasswordExpires " . $objItem->PasswordExpires . "<br />";
+      $output .= "PasswordRequired " . $objItem->PasswordRequired . "<br />";
+      $output .= "SID " . $objItem->SID . "<br />";
+      $output .= "SIDType " . $objItem->SIDType . "<br />";
+      $output .= "Status " . $objItem->Status . "<br />";
 			$output .= "<hr />";
-		};
+    }
 	};
 	print $output;
 };
+		
+// define('HISTORY_LIST',34); //put any path that leads to the history FOLDER (C:\Users\aneagles\AppData\Local\Microsoft\Windows\History)
+// $ITEM_NAME=0;
+// $ITEM_DATE=2;
+// $objShell = new COM("Shell.Application");
+// $objHistory = $objShell->NameSpace(HISTORY_LIST);
+// $objHistoryFolder = $objHistory->Self;
+// Echo "<br />"."Location of History ";
+// Echo $objHistoryFolder->Path;
+// foreach ($objHistory->Items as $objPeriod) {
+//   Echo "<br />".$objPeriod->Name;
+//   Echo str_repeat("=",strlen($objPeriod->Name));
+//   if ($objPeriod->IsFolder) {
+//     $objSiteFolder=$objPeriod->GetFolder;
+//     foreach ($objSiteFolder->Items as $objSite) {
+//       Echo "<br />".$objSite->Name;
+//       Echo str_repeat("-",strlen($objSite->Name));
+//       if ($objSite->IsFolder) {
+//         $objPageFolder = $objSite->GetFolder;
+//         foreach ($objPageFolder->Items as $objPage) {
+//           $strURL = $objPageFolder->GetDetailsOf($objPage,$ITEM_NAME);
+//           Echo "<br />"."URL: ".$strURL;
+//           $strDateVisited = $objPageFolder->GetDetailsOf($objPage,$ITEM_DATE);
+//           Echo "Date Visited: " . $strDateVisited;
+//         }
+//       } 
+//     }
+//   } 
+// }
 
 ?>

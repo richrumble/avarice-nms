@@ -12,7 +12,7 @@ b.r2{margin: 0 3px;}
 b.r3{margin: 0 2px;}
 b.r4{margin: 0 1px; height: 2px;} 
 b.r5{margin: 0 1px; height: 2px;} 
-.cell {margin: 0 0;padding:1px 0 1px;display:inline-block;;border-left:6px solid #2A551D;border-right:6px solid #2A551D;}
+.cell {margin: 0 0;padding:1px 0 1px;display:inline-block;;border-left:6px solid #2A551D;border-right:6px solid #2A551D; min-width: 200px;}
 form{border:0 none;margin:0;padding:0;}
 p,ul,ol{color:#aaaaaa; padding:0 2px 0 10px;}
 
@@ -27,7 +27,7 @@ fieldset{border:0 none;}
 #head_nav ul li a.nav:hover{text-decoration:underline; background:url(../img/nav-bg-25px-grn.png) 0 -50px;}
 #head_nav ul li a.active{display:block;height:38px;padding: 12px 12px 0;width:auto;color:#fff; text-decoration:underline; background:url(../img/active-25px-orng.png) 0 0;}
 #head_nav ul li a.active:hover {text-decoration:underline; background:url(../img/active-25px-orng.png) 0 -50px;}
-
+.highlight {background:#50a233;}
 .header #search{position:absolute;right:5%;top:5px;}
 .header #search fieldset{width:220px;}
 .header #search form{position:relative;}
@@ -38,8 +38,8 @@ h3{color:#9A5E2C;padding:0; margin: 15px 0 0;}
 .main{color:#ccc;margin:12px 0 0 255px;min-width:800px;}
 .main-only{color:#ccc;margin:12px 0 0 0px;min-width:800px;}
 .main-only h1, .main h1{color:#215D9C;margin:0;padding:5px 10px 0;}
-.footer{background:transparent url(../img/footer-bg.png) repeat-x scroll 0 0;clear:both;float:left;height:50px;margin:10px 0 0;width:100%; padding: 1px 0 0;}
-.footer p {background:url("../img/avarice-cir-37px.png") no-repeat scroll 0 -1px transparent;margin:8px 0 0;text-align:center;}
+.footer{background:transparent url(../img/footer-bg.png) repeat-x scroll 0 0;clear:both;float:left;height:50px;margin:20px 0 0;width:100%; padding: 1px 0 0;}
+.footer p {background: url("../img/avarice-cir-37px.png") no-repeat scroll 0 0 transparent;margin: 8px 0 0;padding: 10px 0 18px;text-align: center;}
 .blackborder{border:2px solid #000;}
 .legend_null,.noscreen {display:none;}
 .packet_header {border: solid 1px #000000; padding: 0 2px;font-size:10pt; text-align:left;}
@@ -53,3 +53,4 @@ label.creds{color:#fff; font-weight:400;padding: 0 0 0 5px;;}
 form.formtodiv fieldset label input{padding: 2px; margin: 1px 2px 3px 5px;}
 form.formtodiv fieldset input{padding: 0; margin: 0 5px 10px;}
 form.formtodiv fieldset label input.right{margin: 0 5px;padding: 0;}
+#results{font-size:10pt;}

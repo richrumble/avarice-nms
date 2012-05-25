@@ -1,7 +1,5 @@
 <?PHP
 //header('Content-Type: text/plain');
-$wbemFlagReturnImmediately=0x10;
-$wbemFlagForwardOnly=0x20;
 $WbemAuthenticationLevelPktPrivacy=6;
 
 $get_sid  = new Variant("",VT_BSTR );
@@ -14,7 +12,8 @@ $arrComputers=array('192.168.1.10');
 
 foreach ($arrComputers as $strComputer) {
 	$obj = new COM('WbemScripting.SWbemLocator');
-	$obj->Security_->ImpersonationLevel=3;
+	$obj->Security_->ImpersonationLevel = 3;
+	$obj->Security_->AuthenticationLevel = $WbemAuthenticationLevelPktPrivacy;
 	$wmi = $obj->ConnectServer($strComputer, '/root/cimv2', $user, $password);   //Use the second method below if no CLI computer is given
 	//$wmi = new COM('winmgmts:{impersonationLevel=impersonate}!//' . $strComputer . '/root/cimv2');      //Use local computer
 	$colItems = $wmi->ExecQuery("SELECT * FROM Win32_Bios");
