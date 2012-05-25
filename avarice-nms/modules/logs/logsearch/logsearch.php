@@ -129,7 +129,6 @@ if (empty($form_data['action'])) {
 	
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
-		//$output .= "Computer: " . $computer . "<br />";
 		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
 			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
 		} else {
@@ -137,22 +136,96 @@ if (empty($form_data['action'])) {
 			$obj->Security_->ImpersonationLevel=3; /* http://msdn.microsoft.com/en-us/library/windows/desktop/aa393787%28v=vs.85%29.aspx */
 			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
 		};
-		$colItems=$objWMIService->ExecQuery($query);
+		$colItems = $objWMIService->ExecQuery($query);
+		$counts = array (
+			"Category"   => array(),
+			"EventCode"  => array(),
+			"LogFile"    => array(),
+			"SourceName" => array(),
+			"Type"       => array(),
+			"User"       => array()
+		);
 		foreach ($colItems as $objItem) {
-			$output .= "Category: " . $objItem->Category . "<br />";
-			$output .= "Computer Name: " . 	$objItem->ComputerName . "<br />";
-			$output .= "Event Code: " . $objItem->EventCode . "<br />";
-			$output .= "Log File: " . $objItem->LogFile . "<br />";
-			$output .= "Message: " . str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "<br />";
-			$output .= "Record Number: " . $objItem->RecordNumber . "<br />";
-			$output .= "Source Name: " . $objItem->SourceName . "<br />";
-			$output .= "Time Written: " . $objItem->TimeWritten . "<br />";
-			$output .= "Event Type: " . $objItem->Type . "<br />";
-			$output .= "User: " . $objItem->User . "<br />";
-			$output .= "<hr />";
+			foreach ($counts as $key => $value) {
+				if (!in_array($objItem->$key, array_keys($value))) {
+					$counts[$key][$objItem->$key] = 0;
+				};
+				$counts[$key][$objItem->$key]++;
+			};
+			$output .= "
+				<div class = \"tag_" . $objItem->Category . " tag_" . $objItem->EventCode . " tag_" . $objItem->LogFile . " tag_" . $objItem->SourceName . " tag_" . $objItem->Type . " tag_" . $objItem->User . "\">
+					<table border = 1>
+						<tr>
+							<th>Category</th>
+							<td>" . $objItem->Category . "</td>
+						</tr>
+						<tr>
+							<th>Computer Name</th>
+							<td>" .	$objItem->ComputerName . "</td>
+						</tr>
+						<tr>
+							<th>Event Code</th>
+							<td>" .	$objItem->EventCode . "</td>
+						</tr>
+						<tr>
+							<th>Log File</th>
+							<td>" .	$objItem->LogFile . "</td>
+						</tr>
+						<tr>
+							<th>Message</th>
+							<td>" .	str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "</td>
+						</tr>
+						<tr>
+							<th>Record Number</th>
+							<td>" .	$objItem->RecordNumber . "</td>
+						</tr>
+						<tr>
+							<th>Source Name</th>
+							<td>" .	$objItem->SourceName . "</td>
+						</tr>
+						<tr>
+							<th>Time Written</th>
+							<td>" .	$objItem->TimeWritten . "</td>
+						</tr>
+						<tr>
+							<th>Event Type</th>
+							<td>" .	$objItem->Type . "</td>
+						</tr>
+						<tr>
+							<th>User</th>
+							<td>" .	$objItem->User. "</td>
+						</tr>
+					</table>
+				</div>";
 		};
 	};
-	print $output;
+	$countshead = "
+		<div>
+			<table border = 1>
+				<tr>
+					<th>Categories</th>
+					<th>EventCodes</th>
+					<th>LogFiles</th>
+					<th>SourceNames</th>
+					<th>Types</th>
+					<th>Users</th>
+				</tr>
+				<tr>";
+	foreach ($counts as $cate => $dets) {
+		$countshead .= "
+					<td>";
+		foreach ($dets as $det => $dcount) {
+			$countshead .= "
+						" . $det . ": " . $dcount . "<br />";
+		};
+		$countshead .= "
+					</td>";
+	};
+	$countshead .= "
+				</tr>
+			</table>
+		</div>";
+	print $countshead . $output;
 };
 
 ?>
