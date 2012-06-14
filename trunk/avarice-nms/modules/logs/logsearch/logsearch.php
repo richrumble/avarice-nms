@@ -17,7 +17,7 @@ if (empty($form_data['action'])) {
   <link rel="icon" href="img/favicon.ico" type="img/x-icon" />
   <script type = "text/javascript" src = "jquery-1.6.1.min.js"></script>
   <script type = "text/javascript" src = "form.js"></script>
- <!-- <script type = "text/javascript" src = "placeholder-support.js"></script> -->
+  <script type="text/javascript" src="toggle.js"></script>
  </head>
  <body>
   <div class="header">
@@ -86,13 +86,13 @@ if (empty($form_data['action'])) {
    </b>
   <div class="cell">
    <div id = "results">
-   	<p>EVENT LOG SEARCH: Results will appear here. The default credentials being used are typically shown in the form, if nothing is shown 
-   		assume the credentials that this program is being run under are being used and the LocalHost is the Target. You can specify multiple
-   		hosts on the Target(s) form input by comma separating FQDN's or IP's. Unless you input a Username <b>and</b> Password the default 
-   		credentials will be used.
-   	</p>
-   	<p>Pagination, exporting/saving and filtering results are coming soon. Searching results can be accomplished by pressing ctrl+f like 
-   		in your browser. Monitoring and scheduling tasks is also on the horizon.
+    <p>EVENT LOG SEARCH: Results will appear here. The default credentials being used are typically shown in the form, if nothing is shown
+      assume the credentials that this program is being run under are being used and the LocalHost is the Target. You can specify multiple
+      hosts on the Target(s) form input by comma separating FQDN's or IP's. Unless you input a Username <b>and</b> Password the default
+      credentials will be used.
+    </p>
+    <p>Pagination, exporting/saving and filtering results are coming soon. Searching results can be accomplished by pressing ctrl+f like
+      in your browser. Monitoring and scheduling tasks is also on the horizon.
     </p>
    </div> <!-- End Results Div -->
   </div> <!-- End Cell Div -->
@@ -108,124 +108,130 @@ if (empty($form_data['action'])) {
    </div> <!-- End Footer Div -->
  </body>
 </html>
-      
+
 
 <?php
 } else if ($form_data['action'] == "search") {
-	$output = "
-		<h1>Results:</h1>
-		<hr />";
-	//$output .= $form_data['fqdn'] . "<br />";
-	if (empty($form_data['fqdn'])) {
-		$form_data['fqdn'] = ".";
-	};
-	$computers = explode(",", $form_data['fqdn']);
-	
-	$query = "Select * from Win32_NTLogEvent Where";
-	if ($form_data['logfile'] != "all") {
-		$query .= " LogFile = '" . $form_data['logfile'] . "' and";
-	};
-	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
-	
-	foreach ($computers as $computer) {
-		$computer = trim($computer);
-		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
-			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
-		} else {
-			$obj = new COM('WbemScripting.SWbemLocator');
-			$obj->Security_->ImpersonationLevel=3; /* http://msdn.microsoft.com/en-us/library/windows/desktop/aa393787%28v=vs.85%29.aspx */
-			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
-		};
-		$colItems = $objWMIService->ExecQuery($query);
-		$counts = array (
-			"Category"   => array(),
-			"EventCode"  => array(),
-			"LogFile"    => array(),
-			"SourceName" => array(),
-			"Type"       => array(),
-			"User"       => array()
-		);
-		foreach ($colItems as $objItem) {
-			foreach ($counts as $key => $value) {
-				if (!in_array($objItem->$key, array_keys($value))) {
-					$counts[$key][$objItem->$key] = 0;
-				};
-				$counts[$key][$objItem->$key]++;
-			};
-			$output .= "
-				<div class = \"tag_" . $objItem->Category . " tag_" . $objItem->EventCode . " tag_" . $objItem->LogFile . " tag_" . $objItem->SourceName . " tag_" . $objItem->Type . " tag_" . $objItem->User . "\">
-					<table border = 1>
-						<tr>
-							<th>Category</th>
-							<td>" . $objItem->Category . "</td>
-						</tr>
-						<tr>
-							<th>Computer Name</th>
-							<td>" .	$objItem->ComputerName . "</td>
-						</tr>
-						<tr>
-							<th>Event Code</th>
-							<td>" .	$objItem->EventCode . "</td>
-						</tr>
-						<tr>
-							<th>Log File</th>
-							<td>" .	$objItem->LogFile . "</td>
-						</tr>
-						<tr>
-							<th>Message</th>
-							<td>" .	str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "</td>
-						</tr>
-						<tr>
-							<th>Record Number</th>
-							<td>" .	$objItem->RecordNumber . "</td>
-						</tr>
-						<tr>
-							<th>Source Name</th>
-							<td>" .	$objItem->SourceName . "</td>
-						</tr>
-						<tr>
-							<th>Time Written</th>
-							<td>" .	$objItem->TimeWritten . "</td>
-						</tr>
-						<tr>
-							<th>Event Type</th>
-							<td>" .	$objItem->Type . "</td>
-						</tr>
-						<tr>
-							<th>User</th>
-							<td>" .	$objItem->User. "</td>
-						</tr>
-					</table>
-				</div>";
-		};
-	};
-	$countshead = "
-		<div>
-			<table border = 1>
-				<tr>
-					<th>Categories</th>
-					<th>EventCodes</th>
-					<th>LogFiles</th>
-					<th>SourceNames</th>
-					<th>Types</th>
-					<th>Users</th>
-				</tr>
-				<tr>";
-	foreach ($counts as $cate => $dets) {
-		$countshead .= "
-					<td>";
-		foreach ($dets as $det => $dcount) {
-			$countshead .= "
-						" . $det . ": " . $dcount . "<br />";
-		};
-		$countshead .= "
-					</td>";
-	};
-	$countshead .= "
-				</tr>
-			</table>
-		</div>";
-	print $countshead . $output;
+  $output = "
+    <h1>Results:</h1>
+    <hr />";
+  //$output .= $form_data['fqdn'] . "<br />";
+  if (empty($form_data['fqdn'])) {
+    $form_data['fqdn'] = ".";
+  };
+  $computers = explode(",", $form_data['fqdn']);
+
+  $query = "Select * from Win32_NTLogEvent Where";
+  if ($form_data['logfile'] != "all") {
+    $query .= " LogFile = '" . $form_data['logfile'] . "' and";
+  };
+  $query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+
+  foreach ($computers as $computer) {
+    $computer = trim($computer);
+    if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
+      $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
+    } else {
+      $obj = new COM('WbemScripting.SWbemLocator');
+      $obj->Security_->ImpersonationLevel=3; /* http://msdn.microsoft.com/en-us/library/windows/desktop/aa393787%28v=vs.85%29.aspx */
+      $objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
+    };
+    $colItems = $objWMIService->ExecQuery($query);
+    $counts = array (
+      "Category"   => array(),
+      "EventCode"  => array(),
+      "LogFile"    => array(),
+      "SourceName" => array(),
+      "Type"       => array(),
+      "User"       => array()
+    );
+    foreach ($colItems as $objItem) {
+      foreach ($counts as $key => $value) {
+        if (!in_array($objItem->$key, array_keys($value))) {
+          $counts[$key][$objItem->$key] = 0;
+        };
+        $counts[$key][$objItem->$key]++;
+      };
+      $output .= "
+        <div class = \"tag_" . $objItem->Category . " tag_" . $objItem->EventCode . " tag_" . $objItem->LogFile . " tag_" . $objItem->SourceName . " tag_" . $objItem->Type . " tag_" . $objItem->User . "\">
+          <table class=\"results\">
+            <tbody>
+              <tr>
+                <th>Category</th>
+                <td>" . $objItem->Category . "</td>
+              </tr>
+              <tr>
+                <th>Computer&nbsp;Name</th>
+                <td>" . $objItem->ComputerName . "</td>
+              </tr>
+              <tr>
+                <th>Event Code</th>
+                <td>" . $objItem->EventCode . "</td>
+              </tr>
+              <tr>
+                <th>Log File</th>
+                <td>" . $objItem->LogFile . "</td>
+              </tr>
+              <tr>
+                <th id=\"message\">Message</th>
+                <td>" . str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "</td>
+              </tr>
+              <tr>
+                <th>Record Number</th>
+                <td>" . $objItem->RecordNumber . "</td>
+              </tr>
+              <tr>
+                <th>Source Name</th>
+                <td>" . $objItem->SourceName . "</td>
+              </tr>
+              <tr>
+                <th>Time Written</th>
+                <td>" . $objItem->TimeWritten . "</td>
+              </tr>
+              <tr>
+                <th>Event Type</th>
+                <td>" . $objItem->Type . "</td>
+              </tr>
+              <tr>
+                <th>User</th>
+                <td>" . $objItem->User. "</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>";
+    };
+  };
+  $countshead = "
+    <div id=\"stats\">
+      <table id=\"stats\" class=\"tablesorter\">
+        <thead>
+          <tr>
+            <th class=\"sorting\">Categories</th>
+            <th class=\"sorting\">EventCodes</th>
+            <th class=\"sorting\">LogFiles</th>
+            <th class=\"sorting\">SourceNames</th>
+            <th class=\"sorting\">Types</th>
+            <th class=\"sorting\">Users</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>";
+  foreach ($counts as $cate => $dets) {
+    $countshead .= "
+           <td>";
+    foreach ($dets as $det => $dcount) {
+      $countshead .= "
+            " . $det . ":&nbsp;" . $dcount . "<br />";
+    };
+    $countshead .= "
+           </td>";
+  };
+  $countshead .= "
+          </tr>
+        </tbody>
+      </table>
+    </div>";
+  print $countshead . $output;
 };
 
 ?>
