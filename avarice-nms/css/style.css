@@ -53,4 +53,11 @@ label.creds{color:#fff; font-weight:400;padding: 0 0 0 5px;;}
 form.formtodiv fieldset label input{padding: 2px; margin: 1px 2px 3px 5px;}
 form.formtodiv fieldset input{padding: 0; margin: 0 5px 10px;}
 form.formtodiv fieldset label input.right{margin: 0 5px;padding: 0;}
-#results{font-size:10pt;}
+div#results{font-size:10pt;}
+table#results{background: none repeat scroll 0 0 #000000;}
+table#results tr{vertical-align:top;background: none repeat scroll 0 0 #000000;}
+table#results th{text-align:right;border: none;padding: 0 2px 0 0;}
+table#results td{text-align:left;border: none;}
+div#stats{max-height:210px;overflow:auto;}
+table#stats tr{vertical-align:top;}
+table.results {border-top: 2px solid;}
