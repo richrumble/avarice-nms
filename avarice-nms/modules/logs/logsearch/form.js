@@ -18,7 +18,7 @@ $(document).ready(function() {
 
 function filterparams(activecat) {
 	$(".filtercat[id!=" + activecat + "]").css("display", "none");
-	if ($.('#' + activecat).css("display") == "none") {
-		$.('#' + activecat).css("display", "block");
+	if ($('div#' + activecat).css("display") == "none") {
+		$('div#' + activecat).css("display", "block");
 	}
 }

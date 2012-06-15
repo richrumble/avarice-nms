@@ -112,6 +112,125 @@ if (empty($form_data['action'])) {
 
 <?php
 } else if ($form_data['action'] == "search") {
+	$output = "
+		<h1>Results:</h1>
+		<hr />";
+	//$output .= $form_data['fqdn'] . "<br />";
+	if (empty($form_data['fqdn'])) {
+		$form_data['fqdn'] = ".";
+	};
+	$computers = explode(",", $form_data['fqdn']);
+	
+	$query = "Select * from Win32_NTLogEvent Where";
+	if ($form_data['logfile'] != "all") {
+		$query .= " LogFile = '" . $form_data['logfile'] . "' and";
+	};
+	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+	
+	foreach ($computers as $computer) {
+		$computer = trim($computer);
+		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
+			$objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,(Security)}//" . $computer . "\\root\\cimv2");
+		} else {
+			$obj = new COM('WbemScripting.SWbemLocator');
+			$obj->Security_->ImpersonationLevel=3; /* http://msdn.microsoft.com/en-us/library/windows/desktop/aa393787%28v=vs.85%29.aspx */
+			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
+		};
+		$colItems = $objWMIService->ExecQuery($query);
+		$counts = array (
+			"Category"   => array(),
+			"EventCode"  => array(),
+			"LogFile"    => array(),
+			"SourceName" => array(),
+			"Type"       => array(),
+			"User"       => array()
+		);
+		foreach ($colItems as $objItem) {
+			foreach ($counts as $key => $value) {
+				if (!in_array($objItem->$key, array_keys($value))) {
+					$counts[$key][$objItem->$key] = 0;
+				};
+				$counts[$key][$objItem->$key]++;
+			};
+			$output .= "
+				<div class = \"tag_" . $objItem->Category . " tag_" . $objItem->EventCode . " tag_" . $objItem->LogFile . " tag_" . $objItem->SourceName . " tag_" . $objItem->Type . " tag_" . $objItem->User . "\">
+					<table border = 1>
+						<tr>
+							<th>Category</th>
+							<td>" . $objItem->Category . "</td>
+						</tr>
+						<tr>
+							<th>Computer Name</th>
+							<td>" .	$objItem->ComputerName . "</td>
+						</tr>
+						<tr>
+							<th>Event Code</th>
+							<td>" .	$objItem->EventCode . "</td>
+						</tr>
+						<tr>
+							<th>Log File</th>
+							<td>" .	$objItem->LogFile . "</td>
+						</tr>
+						<tr>
+							<th>Message</th>
+							<td>" .	str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "</td>
+						</tr>
+						<tr>
+							<th>Record Number</th>
+							<td>" .	$objItem->RecordNumber . "</td>
+						</tr>
+						<tr>
+							<th>Source Name</th>
+							<td>" .	$objItem->SourceName . "</td>
+						</tr>
+						<tr>
+							<th>Time Written</th>
+							<td>" .	$objItem->TimeWritten . "</td>
+						</tr>
+						<tr>
+							<th>Event Type</th>
+							<td>" .	$objItem->Type . "</td>
+						</tr>
+						<tr>
+							<th>User</th>
+							<td>" .	$objItem->User. "</td>
+						</tr>
+					</table>
+				</div>";
+		};
+	};
+	$countshead = "
+		<h1>Filter By:</h1>
+		<hr />
+		<div>
+			<table border = 1>
+				<tr>
+					<th onclick=\"filterparams('category');\">Categories</th>
+					<th onclick=\"filterparams('eventcode');\">EventCodes</th>
+					<th onclick=\"filterparams('logfile');\">LogFiles</th>
+					<th onclick=\"filterparams('sourcename');\">SourceNames</th>
+					<th onclick=\"filterparams('type');\">Types</th>
+					<th onclick=\"filterparams('user');\">Users</th>
+				</tr>
+				<tr>
+					<td colspan = 6>";
+	foreach ($counts as $cate => $dets) {
+		$countshead .= "
+						<div class=\"filtercat\" id=\"" . strtolower($cate) . "\">";
+		uksort($dets, 'strnatcasecmp');
+		foreach ($dets as $det => $dcount) {
+			$countshead .= "
+							" . $det . ": " . $dcount . "<br />";
+		};
+		$countshead .= "
+						</div>";
+	};
+	$countshead .= "
+					</td>
+				</tr>
+			</table>
+		</div>";
+	print $countshead . $output;
   $output = "
     <h1>Results:</h1>
     <hr />";
