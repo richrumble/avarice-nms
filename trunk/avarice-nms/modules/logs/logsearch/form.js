@@ -15,3 +15,10 @@ $(document).ready(function() {
     return false; // cancel original event to prevent form submitting
   });
 });
+
+function filterparams(activecat) {
+	$(".filtercat[id!=" + activecat + "]").css("display", "none");
+	if ($.('#' + activecat).css("display") == "none") {
+		$.('#' + activecat).css("display", "block");
+	}
+}
