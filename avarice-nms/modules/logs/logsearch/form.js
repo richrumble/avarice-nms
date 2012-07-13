@@ -22,3 +22,12 @@ function filterparams(activecat) {
 		$('div#' + activecat).css("display", "block");
 	}
 }
+
+function filterlogs(gcate) {
+	$("input[name=" + gcate + "]:checkbox:not(:checked)").each(function () {
+		$(".tag_" + this.value).css("display", "none");
+	});
+	$("input[name=" + gcate + "]:checkbox:checked").each(function () {
+		$(".tag_" + this.value).css("display", "block");
+	});
+}
