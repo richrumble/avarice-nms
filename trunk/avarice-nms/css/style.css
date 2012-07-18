@@ -55,9 +55,13 @@ form.formtodiv fieldset input{padding: 0; margin: 0 5px 10px;}
 form.formtodiv fieldset label input.right{margin: 0 5px;padding: 0;}
 div#results{font-size:10pt;}
 table#results{background: none repeat scroll 0 0 #000000;}
-table#results tr{vertical-align:top;background: none repeat scroll 0 0 #000000;}
-table#results th{text-align:right;border: none;padding: 0 2px 0 0;}
-table#results td{text-align:left;border: none;}
+table#results tr{vertical-align:top;}
+table#results th{padding: 0 2px 0 0; text-align: right;}
+table#results td{text-align: left;}
 div#stats{max-height:210px;overflow:auto;}
 table#stats tr{vertical-align:top;}
 table.results {border-top: 2px solid;}
+
+table#results tr.odd th, tr.odd td{background: none repeat scroll 0 0 #2a551d;}
+table#results tr.even th, tr.even td{background: none repeat scroll 0 0 #366b24;}
+table#results tr.over th, tr.over td{background: none repeat scroll 0 0 #4d9934;}
