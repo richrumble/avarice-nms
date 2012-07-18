@@ -3,6 +3,13 @@ $wbemFlagReturnImmediately=0x10;
 $wbemFlagForwardOnly=0x20;
 $WbemAuthenticationLevelPktPrivacy=6;
 
+function win_time($timestr) {
+ return substr($timestr, 4, 2) . "/" . substr($timestr, 6, 2) . "/" .
+ substr($timestr, 0, 4) . " " . substr($timestr, 8, 2) . ":" .
+ substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2) . " "; //leaving off the TimeZone offset.
+ // substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2) . " " . substr($timestr, -4);
+};
+
 date_default_timezone_set('America/Indiana/Indianapolis');
 $form_data = $_REQUEST;
 if (empty($form_data['action'])) {
@@ -17,7 +24,6 @@ if (empty($form_data['action'])) {
   <link rel="icon" href="img/favicon.ico" type="img/x-icon" />
   <script type = "text/javascript" src = "jquery-1.6.1.min.js"></script>
   <script type = "text/javascript" src = "form.js"></script>
-  <script type="text/javascript" src="toggle.js"></script>
  </head>
  <body>
   <div class="header">
@@ -54,7 +60,7 @@ if (empty($form_data['action'])) {
       <input type = "hidden" name = "action" value = "search" />
       <h3>Choose Log(s)</h3>
       <label>
-       <input type = "radio" name = "logfile" value = "all" checked />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+       <input type = "radio" name = "logfile" value = "all" checked="checked" />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
       </label>
       <label>
        <input class = "right" type = "radio" name = "logfile" value = "Application" />Application
@@ -66,10 +72,21 @@ if (empty($form_data['action'])) {
        <input class = "right" type = "radio" name = "logfile" value = "System" />System
       </label>
       <h3>Timeframe</h3>
-      <label><input type = "radio" name = "timeframe" value = "-1 hour" checked />Last Hour&nbsp;</label>
-      <label><input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day</label><br />
-      <label><input type = "radio" name = "timeframe" value = "-1 week" />Last Week</label>
-      <label><input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month</label><br />
+      <label>
+        <input type = "radio" name = "timeframe" value = "1 day" checked="checked" />All&nbsp;Time
+      </label><br />
+      <label>
+        <input type = "radio" name = "timeframe" value = "-1 hour" />Last Hour&nbsp;
+      </label>
+      <label>
+      	<input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day
+     </label><br />
+      <label>
+      	<input type = "radio" name = "timeframe" value = "-1 week" />Last Week
+      </label>
+      <label>
+      	<input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month
+      </label><br />
       <input type = "submit" value = "Search" />
      </fieldset>
     </form>
@@ -113,6 +130,13 @@ if (empty($form_data['action'])) {
 <?php
 } else if ($form_data['action'] == "search") {
 	$output = "
+	  <script type=\"text/javascript\">
+      \$(document).ready(function() {
+        \$(\"#results tr\").mouseover(function(){\$(this).addClass(\"over\");}).mouseout(function(){\$(this).removeClass(\"over\");});
+        \$(\"#results tr:odd\").addClass(\"odd\");
+        \$(\"#results tr:even\").addClass(\"even\");
+      });
+    </script>
 		<h1>Results:</h1>
 		<hr />";
 	//$output .= $form_data['fqdn'] . "<br />";
@@ -121,11 +145,18 @@ if (empty($form_data['action'])) {
 	};
 	$computers = explode(",", $form_data['fqdn']);
 	
-	$query = "Select * from Win32_NTLogEvent Where";
+	$query = "Select * from Win32_NTLogEvent";
 	if ($form_data['logfile'] != "all") {
-		$query .= " LogFile = '" . $form_data['logfile'] . "' and";
+		$query .= "  WHERE LogFile = '" . $form_data['logfile'] . "'";
+		$whereand =" AND ";
+	} else {
+		$whereand =" WHERE ";
 	};
-	$query .= " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+	if ($form_data['timeframe'] != "1 day") {
+		$query .= $whereand . " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+  } else {
+	  $query .= $whereand . " TimeWritten <= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
+	};
 	
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
@@ -154,47 +185,49 @@ if (empty($form_data['action'])) {
 			};
 			$output .= "
 				<div class = \"tag_" . $objItem->Category . " tag_" . $objItem->EventCode . " tag_" . $objItem->LogFile . " tag_" . $objItem->SourceName . " tag_" . $objItem->Type . " tag_" . $objItem->User . "\">
-					<table border = 1>
+					<table id=\"results\">
+					  <tbody>
 						<tr>
-							<th>Category</th>
+							<th>Category:&nbsp;</th>
 							<td>" . $objItem->Category . "</td>
 						</tr>
 						<tr>
-							<th>Computer Name</th>
+							<th>Computer&nbsp;Name:&nbsp;</th>
 							<td>" .	$objItem->ComputerName . "</td>
 						</tr>
 						<tr>
-							<th>Event Code</th>
+							<th>Event&nbsp;Code:&nbsp;</th>
 							<td>" .	$objItem->EventCode . "</td>
 						</tr>
 						<tr>
-							<th>Log File</th>
+							<th>Log&nbsp;File:&nbsp;</th>
 							<td>" .	$objItem->LogFile . "</td>
 						</tr>
 						<tr>
-							<th>Message</th>
+							<th>Message:&nbsp;</th>
 							<td>" .	str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "</td>
 						</tr>
 						<tr>
-							<th>Record Number</th>
+							<th>Record&nbsp;Number:&nbsp;</th>
 							<td>" .	$objItem->RecordNumber . "</td>
 						</tr>
 						<tr>
-							<th>Source Name</th>
+							<th>Source&nbsp;Name:&nbsp;</th>
 							<td>" .	$objItem->SourceName . "</td>
 						</tr>
 						<tr>
-							<th>Time Written</th>
-							<td>" .	$objItem->TimeWritten . "</td>
+							<th>Time&nbsp;Written:&nbsp;</th>
+							<td>" .	win_time($objItem->TimeWritten) . "</td>
 						</tr>
 						<tr>
-							<th>Event Type</th>
+							<th>Event&nbsp;Type:&nbsp;</th>
 							<td>" .	$objItem->Type . "</td>
 						</tr>
 						<tr>
-							<th>User</th>
+							<th>User:&nbsp;</th>
 							<td>" .	$objItem->User. "</td>
 						</tr>
+						</tbody>
 					</table>
 				</div>";
 		};
@@ -203,15 +236,17 @@ if (empty($form_data['action'])) {
 		<h1>Filter By:</h1>
 		<hr />
 		<div>
-			<table border = 1>
+			<table>
+			  <tbody>
 				<tr>
-					<th onclick=\"filterparams('category');\">Categories</th>
-					<th onclick=\"filterparams('eventcode');\">EventCodes</th>
-					<th onclick=\"filterparams('logfile');\">LogFiles</th>
-					<th onclick=\"filterparams('sourcename');\">SourceNames</th>
-					<th onclick=\"filterparams('type');\">Types</th>
+					<th onclick=\"filterparams('category');\">Categories </th>
+					<th onclick=\"filterparams('eventcode');\">EventCodes </th>
+					<th onclick=\"filterparams('logfile');\">LogFiles </th>
+					<th onclick=\"filterparams('sourcename');\">SourceNames </th>
+					<th onclick=\"filterparams('type');\">Types </th>
 					<th onclick=\"filterparams('user');\">Users</th>
 				</tr>
+				</tbody>
 			</table>";
 	foreach ($counts as $cate => $dets) {
 		if ($cate != "SourceName") {
@@ -221,7 +256,8 @@ if (empty($form_data['action'])) {
 		};
 		$countshead .= "
 						<div style=\"display: none;\" class=\"filtercat\" id=\"" . strtolower($cate) . "\">
-							<table border = 1>";
+							<table>
+							  <tbody>";
 		uksort($dets, 'strnatcasecmp');
 		$x = 0;
 		foreach ($dets as $det => $dcount) {
@@ -240,12 +276,14 @@ if (empty($form_data['action'])) {
 			}
 		};
 		$countshead .= "
+		            </tbody>
 							</table>
 						</div>";
 	};
 	$countshead .= "
 					</td>
 				</tr>
+				</tbody>
 			</table>
 		</div>";
 	print $countshead . $output;
