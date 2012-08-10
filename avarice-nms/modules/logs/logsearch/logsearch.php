@@ -6,13 +6,16 @@ $WbemAuthenticationLevelPktPrivacy=6;
 function win_time($timestr) {
  return substr($timestr, 4, 2) . "/" . substr($timestr, 6, 2) . "/" .
  substr($timestr, 0, 4) . " " . substr($timestr, 8, 2) . ":" .
- substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2) . " "; //leaving off the TimeZone offset.
+ substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2); //leaving off the TimeZone offset.
  // substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2) . " " . substr($timestr, -4);
 };
 
 date_default_timezone_set('America/Indiana/Indianapolis');
 $form_data = $_REQUEST;
 if (empty($form_data['action'])) {
+
+
+
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -48,7 +51,7 @@ if (empty($form_data['action'])) {
     <b class="r0"></b> <b class="r1"></b> <b class="r2"></b> <b class="r3"></b> <b class="r4"></b>
    </b>
    <div class="cell">
-    <form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
+    <form class = "formtodiv" targetdiv = "form2" action = "logsearch.php" method = "POST">
      <fieldset>
       <legend>Event Log Search</legend>
       <label class="creds">FQDN or IP Target(s) | (csv)</label>
@@ -57,39 +60,11 @@ if (empty($form_data['action'])) {
        <input type="text" name="user" placeholder="<?PHP passthru("whoami"); ?>" /> <br />
       <label class="creds">Password </label>
        <input type="password" name="pass" /> <br />
-      <input type = "hidden" name = "action" value = "search" />
-      <h3>Choose Log(s)</h3>
-      <label>
-       <input type = "radio" name = "logfile" value = "all" checked="checked" />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-      </label>
-      <label>
-       <input class = "right" type = "radio" name = "logfile" value = "Application" />Application
-      </label><br />
-      <label>
-       <input type = "radio" name = "logfile" value = "Security" />Security
-      </label>
-      <label>
-       <input class = "right" type = "radio" name = "logfile" value = "System" />System
-      </label>
-      <h3>Timeframe</h3>
-      <label>
-        <input type = "radio" name = "timeframe" value = "1 day" checked="checked" />All&nbsp;Time
-      </label><br />
-      <label>
-        <input type = "radio" name = "timeframe" value = "-1 hour" />Last Hour&nbsp;
-      </label>
-      <label>
-      	<input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day
-     </label><br />
-      <label>
-      	<input type = "radio" name = "timeframe" value = "-1 week" />Last Week
-      </label>
-      <label>
-      	<input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month
-      </label><br />
-      <input type = "submit" value = "Search" />
-     </fieldset>
-    </form>
+      <input type = "hidden" name = "action" value = "form2" /><br />
+      <input type = "submit" value = "Connect" />
+	 </fieldset>
+	</form>
+	<div id="form2"></div>
    </div> <!-- End Cell Div -->
    <b class="rbottom">
     <b class="r4"></b> <b class="r3"></b> <b class="r2"></b> <b class="r1"></b><b class="r0"></b>
@@ -126,38 +101,43 @@ if (empty($form_data['action'])) {
  </body>
 </html>
 
-
 <?php
-} else if ($form_data['action'] == "search") {
-	$output = "
-	  <script type=\"text/javascript\">
-      \$(document).ready(function() {
-        \$(\"#results tr\").mouseover(function(){\$(this).addClass(\"over\");}).mouseout(function(){\$(this).removeClass(\"over\");});
-        \$(\"#results tr:odd\").addClass(\"odd\");
-        \$(\"#results tr:even\").addClass(\"even\");
-      });
-    </script>
-		<h1>Results:</h1>
-		<hr />";
-	//$output .= $form_data['fqdn'] . "<br />";
+} else if ($form_data['action'] == "form2") {
+	if (is_file('loglitedb')) {
+		unlink('loglitedb');
+	};
+	if ($sldb = sqlite_open('loglitedb', 0666, $sqliterror)) {
+		sqlite_query($sldb, "CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128))");
+		sqlite_query($sldb, "CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128))");
+		sqlite_query($sldb, "CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128))");
+		sqlite_query($sldb, "CREATE TABLE SourceNames (pkID INTEGER PRIMARY KEY, SourceName VARCHAR(128))");
+		sqlite_query($sldb, "CREATE TABLE Types (pkID INTEGER PRIMARY KEY, Type VARCHAR(128))");
+		sqlite_query($sldb, "CREATE TABLE Users (pkID INTEGER PRIMARY KEY, User VARCHAR(128))");
+		sqlite_query($sldb, "CREATE TABLE Events (pkID INTEGER PRIMARY KEY, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT)");
+	} else{
+		print $sqliterror;
+	};
 	if (empty($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
 	$computers = explode(",", $form_data['fqdn']);
-	
+	$normalize_data = array(
+		"Categories"  => array(),
+		"EventCodes"  => array(),
+		"Logfiles"    => array(),
+		"SourceNames" => array(),
+		"Types"       => array(),
+		"Users"       => array()
+	);
+	$snorm = array(
+		"Category"   => "Categories",
+		"EventCode"  => "EventCodes",
+		"LogFile"    => "Logfiles",
+		"SourceName" => "SourceNames",
+		"Type"       => "Types",
+		"User"       => "Users"
+	);
 	$query = "Select * from Win32_NTLogEvent";
-	if ($form_data['logfile'] != "all") {
-		$query .= "  WHERE LogFile = '" . $form_data['logfile'] . "'";
-		$whereand =" AND ";
-	} else {
-		$whereand =" WHERE ";
-	};
-	if ($form_data['timeframe'] != "1 day") {
-		$query .= $whereand . " TimeWritten >= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
-  } else {
-	  $query .= $whereand . " TimeWritten <= '" . date('YmdHis.000000-000', strtotime($form_data['timeframe'])) . "'";
-	};
-	
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
 		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
@@ -168,70 +148,73 @@ if (empty($form_data['action'])) {
 			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
 		};
 		$colItems = $objWMIService->ExecQuery($query);
-		$counts = array (
-			"Category"   => array(),
-			"EventCode"  => array(),
-			"LogFile"    => array(),
-			"SourceName" => array(),
-			"Type"       => array(),
-			"User"       => array()
-		);
-		foreach ($colItems as $objItem) {
-			foreach ($counts as $key => $value) {
-				if (!in_array($objItem->$key, array_keys($value))) {
-					$counts[$key][$objItem->$key] = 0;
-				};
-				$counts[$key][$objItem->$key]++;
+		foreach ($normalize_data as $key => $value) {
+			$result = sqlite_query($sldb, "SELECT * FROM " . $key);
+			while ($row = sqlite_fetch_array($result, SQLITE_NUM)) {
+				$normalize_data[$key][$row[0]] = $row[1];
 			};
-			$output .= "
-				<div class = \"tag_" . $objItem->Category . " tag_" . $objItem->EventCode . " tag_" . $objItem->LogFile . " tag_" . $objItem->SourceName . " tag_" . $objItem->Type . " tag_" . $objItem->User . "\">
-					<table id=\"results\">
-					  <tbody>
-						<tr>
-							<th>Category:&nbsp;</th>
-							<td>" . $objItem->Category . "</td>
-						</tr>
-						<tr>
-							<th>Computer&nbsp;Name:&nbsp;</th>
-							<td>" .	$objItem->ComputerName . "</td>
-						</tr>
-						<tr>
-							<th>Event&nbsp;Code:&nbsp;</th>
-							<td>" .	$objItem->EventCode . "</td>
-						</tr>
-						<tr>
-							<th>Log&nbsp;File:&nbsp;</th>
-							<td>" .	$objItem->LogFile . "</td>
-						</tr>
-						<tr>
-							<th>Message:&nbsp;</th>
-							<td>" .	str_replace(array("\r\n", "\t"),array("<br />", "&nbsp;&nbsp;&nbsp;"), $objItem->Message) . "</td>
-						</tr>
-						<tr>
-							<th>Record&nbsp;Number:&nbsp;</th>
-							<td>" .	$objItem->RecordNumber . "</td>
-						</tr>
-						<tr>
-							<th>Source&nbsp;Name:&nbsp;</th>
-							<td>" .	$objItem->SourceName . "</td>
-						</tr>
-						<tr>
-							<th>Time&nbsp;Written:&nbsp;</th>
-							<td>" .	win_time($objItem->TimeWritten) . "</td>
-						</tr>
-						<tr>
-							<th>Event&nbsp;Type:&nbsp;</th>
-							<td>" .	$objItem->Type . "</td>
-						</tr>
-						<tr>
-							<th>User:&nbsp;</th>
-							<td>" .	$objItem->User. "</td>
-						</tr>
-						</tbody>
-					</table>
-				</div>";
+		};
+		foreach ($colItems as $objItem) {
+			foreach ($snorm as $key => $value) {
+				if (!in_array($objItem->$key, $normalize_data[$value])) {
+					$normalize_data[$value][] = $objItem->$key;
+					sqlite_query($sldb, "INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "');");
+				};
+			};
+			$query = "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES (" . array_search($objItem->Category, $normalize_data['Categories']) . ", '" . $objItem->ComputerName . "', " . array_search($objItem->EventCode, $normalize_data['EventCodes']) . ", " . array_search($objItem->LogFile, $normalize_data['Logfiles']) . ", '" . $objItem->Message . "', '" . $objItem->RecordNumber . "', " . array_search($objItem->SourceName, $normalize_data['SourceNames']) . ", '" . win_time($objItem->TimeWritten) . "', " . array_search($objItem->Type, $normalize_data['Types']) . ", " . array_search($objItem->User, $normalize_data['Users']) . ");";
+			@sqlite_query($sldb, "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES (" . array_search($objItem->Category, $normalize_data['Categories']) . ", '" . $objItem->ComputerName . "', " . array_search($objItem->EventCode, $normalize_data['EventCodes']) . ", " . array_search($objItem->LogFile, $normalize_data['Logfiles']) . ", '" . $objItem->Message . "', '" . $objItem->RecordNumber . "', " . array_search($objItem->SourceName, $normalize_data['SourceNames']) . ", '" . win_time($objItem->TimeWritten) . "', " . array_search($objItem->Type, $normalize_data['Types']) . ", " . array_search($objItem->User, $normalize_data['Users']) . ");");
 		};
 	};
+
+?>
+	<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
+     <fieldset>
+	  <input type = "hidden" name = "action" value = "search" />
+      <h3>Choose Log(s)</h3>
+      <label>
+       <input type = "radio" name = "logfile" value = "all" checked="checked" />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </label>
+      <label>
+       <input class = "right" type = "radio" name = "logfile" value = "Application" />Application
+      </label><br />
+      <label>
+       <input type = "radio" name = "logfile" value = "Security" />Security
+      </label>
+      <label>
+       <input class = "right" type = "radio" name = "logfile" value = "System" />System
+      </label>
+      <h3>Timeframe</h3>
+      <label>
+        <input type = "radio" name = "timeframe" value = "1 day" checked="checked" />All&nbsp;Time
+      </label><br />
+      <label>
+        <input type = "radio" name = "timeframe" value = "-1 hour" />Last Hour&nbsp;
+      </label>
+      <label>
+      	<input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day
+     </label><br />
+      <label>
+      	<input type = "radio" name = "timeframe" value = "-1 week" />Last Week
+      </label>
+      <label>
+      	<input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month
+      </label><br />
+      <input type = "submit" value = "Search" />
+     </fieldset>
+    </form>
+<?php
+} else if ($form_data['action'] == "search") {
+	$output = "
+		<script type=\"text/javascript\">
+			\$(document).ready(function() {
+				\$(\"#results tr\").mouseover(function(){\$(this).addClass(\"over\");}).mouseout(function(){\$(this).removeClass(\"over\");});
+				\$(\"#results tr:odd\").addClass(\"odd\");
+				\$(\"#results tr:even\").addClass(\"even\");
+			});
+		</script>
+		<h1>Results:</h1>
+		<hr />";
+	
 	$countshead = "
 		<h1>Filter By:</h1>
 		<hr />
