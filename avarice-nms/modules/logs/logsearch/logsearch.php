@@ -106,14 +106,14 @@ if (empty($form_data['action'])) {
 	if (is_file('loglitedb')) {
 		unlink('loglitedb');
 	};
-	if ($sldb = sqlite_open('loglitedb', 0666, $sqliterror)) {
-		sqlite_query($sldb, "CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128))");
-		sqlite_query($sldb, "CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128))");
-		sqlite_query($sldb, "CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128))");
-		sqlite_query($sldb, "CREATE TABLE SourceNames (pkID INTEGER PRIMARY KEY, SourceName VARCHAR(128))");
-		sqlite_query($sldb, "CREATE TABLE Types (pkID INTEGER PRIMARY KEY, Type VARCHAR(128))");
-		sqlite_query($sldb, "CREATE TABLE Users (pkID INTEGER PRIMARY KEY, User VARCHAR(128))");
-		sqlite_query($sldb, "CREATE TABLE Events (pkID INTEGER PRIMARY KEY, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT)");
+	if ($sldb = new PDO('sqlite:loglitedb.sqlite3')) {
+		$sldb->exec("CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128))");
+		$sldb->exec("CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128))");
+		$sldb->exec("CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128))");
+		$sldb->exec("CREATE TABLE SourceNames (pkID INTEGER PRIMARY KEY, SourceName VARCHAR(128))");
+		$sldb->exec("CREATE TABLE Types (pkID INTEGER PRIMARY KEY, Type VARCHAR(128))");
+		$sldb->exec("CREATE TABLE Users (pkID INTEGER PRIMARY KEY, User VARCHAR(128))");
+		$sldb->exec("CREATE TABLE Events (pkID INTEGER PRIMARY KEY, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT)");
 	} else{
 		print $sqliterror;
 	};
@@ -149,8 +149,7 @@ if (empty($form_data['action'])) {
 		};
 		$colItems = $objWMIService->ExecQuery($query);
 		foreach ($normalize_data as $key => $value) {
-			$result = sqlite_query($sldb, "SELECT * FROM " . $key);
-			while ($row = sqlite_fetch_array($result, SQLITE_NUM)) {
+			foreach ($sldb->query("SELECT * FROM " . $key)->fetchAll as $row) {
 				$normalize_data[$key][$row[0]] = $row[1];
 			};
 		};
@@ -158,11 +157,10 @@ if (empty($form_data['action'])) {
 			foreach ($snorm as $key => $value) {
 				if (!in_array($objItem->$key, $normalize_data[$value])) {
 					$normalize_data[$value][] = $objItem->$key;
-					sqlite_query($sldb, "INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "');");
+					$sldb->exec("INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "');");
 				};
 			};
-			$query = "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES (" . array_search($objItem->Category, $normalize_data['Categories']) . ", '" . $objItem->ComputerName . "', " . array_search($objItem->EventCode, $normalize_data['EventCodes']) . ", " . array_search($objItem->LogFile, $normalize_data['Logfiles']) . ", '" . $objItem->Message . "', '" . $objItem->RecordNumber . "', " . array_search($objItem->SourceName, $normalize_data['SourceNames']) . ", '" . win_time($objItem->TimeWritten) . "', " . array_search($objItem->Type, $normalize_data['Types']) . ", " . array_search($objItem->User, $normalize_data['Users']) . ");";
-			@sqlite_query($sldb, "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES (" . array_search($objItem->Category, $normalize_data['Categories']) . ", '" . $objItem->ComputerName . "', " . array_search($objItem->EventCode, $normalize_data['EventCodes']) . ", " . array_search($objItem->LogFile, $normalize_data['Logfiles']) . ", '" . $objItem->Message . "', '" . $objItem->RecordNumber . "', " . array_search($objItem->SourceName, $normalize_data['SourceNames']) . ", '" . win_time($objItem->TimeWritten) . "', " . array_search($objItem->Type, $normalize_data['Types']) . ", " . array_search($objItem->User, $normalize_data['Users']) . ");");
+			$sldb->exec("INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES (" . array_search($objItem->Category, $normalize_data['Categories']) . ", '" . $objItem->ComputerName . "', " . array_search($objItem->EventCode, $normalize_data['EventCodes']) . ", " . array_search($objItem->LogFile, $normalize_data['Logfiles']) . ", '" . $objItem->Message . "', '" . $objItem->RecordNumber . "', " . array_search($objItem->SourceName, $normalize_data['SourceNames']) . ", '" . win_time($objItem->TimeWritten) . "', " . array_search($objItem->Type, $normalize_data['Types']) . ", " . array_search($objItem->User, $normalize_data['Users']) . ");");
 		};
 	};
 
