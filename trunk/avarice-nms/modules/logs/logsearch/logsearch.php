@@ -103,8 +103,8 @@ if (empty($form_data['action'])) {
 
 <?php
 } else if ($form_data['action'] == "form2") {
-	if (is_file('loglitedb')) {
-		unlink('loglitedb');
+	if (is_file('loglitedb.sqlite3')) {
+		unlink('loglitedb.sqlite3');
 	};
 	if ($sldb = new PDO('sqlite:loglitedb.sqlite3')) {
 		$sldb->exec("CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128))");
@@ -137,7 +137,7 @@ if (empty($form_data['action'])) {
 		"Type"       => "Types",
 		"User"       => "Users"
 	);
-	$query = "Select * from Win32_NTLogEvent";
+	$query = "Select * from Win32_NTLogEvent where logfile ='application'";
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
 		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
@@ -149,7 +149,7 @@ if (empty($form_data['action'])) {
 		};
 		$colItems = $objWMIService->ExecQuery($query);
 		foreach ($normalize_data as $key => $value) {
-			foreach ($sldb->query("SELECT * FROM " . $key)->fetchAll as $row) {
+			foreach ($sldb->query("SELECT * FROM " . $key)->fetchAll() as $row) {
 				$normalize_data[$key][$row[0]] = $row[1];
 			};
 		};
