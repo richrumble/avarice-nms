@@ -103,32 +103,98 @@ if (empty($form_data['action'])) {
 
 <?php
 } else if ($form_data['action'] == "form2") {
-	if (is_file('loglitedb.sqlite3')) {
-		unlink('loglitedb.sqlite3');
-	};
-	if ($sldb = new PDO('mysql:host=localhost;dbname=logsearch','logsearch','UrCGG5e8emb9xffv')) {
-		$sldb->exec("CREATE TABLE IF NOT EXISTS Categories (pkID INTEGER AUTO_INCREMENT, Category VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sldb->exec("CREATE TABLE IF NOT EXISTS EventCodes (pkID INTEGER AUTO_INCREMENT, EventCode VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sldb->exec("CREATE TABLE IF NOT EXISTS Logfiles (pkID INTEGER AUTO_INCREMENT, Logfile VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sldb->exec("CREATE TABLE IF NOT EXISTS SourceNames (pkID INTEGER AUTO_INCREMENT, SourceName VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sldb->exec("CREATE TABLE IF NOT EXISTS Types (pkID INTEGER AUTO_INCREMENT, Type VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sldb->exec("CREATE TABLE IF NOT EXISTS Users (pkID INTEGER AUTO_INCREMENT, User VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sldb->exec("CREATE TABLE IF NOT EXISTS Events (pkID INTEGER AUTO_INCREMENT, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT, PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+	if ($dbh = new PDO('mysql:host=localhost;dbname=logsearch','logsearch','UrCGG5e8emb9xffv')) {
+		$dbh->exec("DROP TABLE IF EXISTS Categories;");
+		$dbh->exec("DROP TABLE IF EXISTS EventCodes;");
+		$dbh->exec("DROP TABLE IF EXISTS Logfiles;");
+		$dbh->exec("DROP TABLE IF EXISTS SourceNames;");
+		$dbh->exec("DROP TABLE IF EXISTS Types;");
+		$dbh->exec("DROP TABLE IF EXISTS Users;");
+		$dbh->exec("DROP TABLE IF EXISTS Events;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS Categories (pkID INTEGER AUTO_INCREMENT, Category VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Category (Category)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS EventCodes (pkID INTEGER AUTO_INCREMENT, EventCode VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY EventCode (EventCode)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS Logfiles (pkID INTEGER AUTO_INCREMENT, Logfile VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Logfile (Logfile)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS SourceNames (pkID INTEGER AUTO_INCREMENT, SourceName VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY SourceName (SourceName)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS Types (pkID INTEGER AUTO_INCREMENT, Type VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Type (Type)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS Users (pkID INTEGER AUTO_INCREMENT, User VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY User (User)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$dbh->exec("CREATE TABLE IF NOT EXISTS Events (pkID INTEGER AUTO_INCREMENT, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT, PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sth = $dbh->prepare("
+			INSERT INTO Events
+				(
+					CategoryID,
+					ComputerName,
+					EventCodeID,
+					LogfileID,
+					Message,
+					RecordNumber,
+					SourceNameID,
+					TimeWritten,
+					TypeID,
+					UserID
+				)
+			VALUES
+				(
+					(
+						SELECT
+							pkID
+						FROM
+							Categories
+						WHERE
+							Category = ?
+					),
+					?,
+					(
+						SELECT
+							pkID
+						FROM
+							EventCodes
+						WHERE
+							EventCode = ?
+					),
+					(
+						SELECT
+							pkID
+						FROM
+							Logfiles
+						WHERE
+							Logfile = ?
+					),
+					?,
+					?,
+					(
+						SELECT
+							pkID
+						FROM
+							SourceNames
+						WHERE
+							SourceName = ?
+					),
+					?,
+					(
+						SELECT
+							pkID
+						FROM
+							Types
+						WHERE
+							Type = ?
+					),
+					(
+						SELECT
+							pkID
+						FROM
+							Users
+						WHERE
+							User = ?
+					)
+				);");
 	} else{
+		// Needs fixed to actually display error
 		print $sqliterror;
 	};
 	if (empty($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
 	$computers = explode(",", $form_data['fqdn']);
-	$normalize_data = array(
-		"Categories"  => array(),
-		"EventCodes"  => array(),
-		"Logfiles"    => array(),
-		"SourceNames" => array(),
-		"Types"       => array(),
-		"Users"       => array()
-	);
 	$snorm = array(
 		"Category"   => "Categories",
 		"EventCode"  => "EventCodes",
@@ -137,7 +203,7 @@ if (empty($form_data['action'])) {
 		"Type"       => "Types",
 		"User"       => "Users"
 	);
-	$query = "Select * from Win32_NTLogEvent where logfile ='application'";
+	$query = "Select * from Win32_NTLogEvent";
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
 		if ($computer == "." or (empty($form_data['user']) and empty($form_data['pass']))) {
@@ -148,19 +214,11 @@ if (empty($form_data['action'])) {
 			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
 		};
 		$colItems = $objWMIService->ExecQuery($query);
-		foreach ($normalize_data as $key => $value) {
-			foreach ($sldb->query("SELECT * FROM " . $key)->fetchAll() as $row) {
-				$normalize_data[$key][$row[0]] = $row[1];
-			};
-		};
 		foreach ($colItems as $objItem) {
 			foreach ($snorm as $key => $value) {
-				if (!in_array($objItem->$key, $normalize_data[$value])) {
-					$normalize_data[$value][] = $objItem->$key;
-					$sldb->exec("INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "');");
-				};
+				$dbh->exec("INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "') ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";");
 			};
-			$sldb->exec("INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES (" . array_search($objItem->Category, $normalize_data['Categories']) . ", '" . $objItem->ComputerName . "', " . array_search($objItem->EventCode, $normalize_data['EventCodes']) . ", " . array_search($objItem->LogFile, $normalize_data['Logfiles']) . ", '" . $objItem->Message . "', '" . $objItem->RecordNumber . "', " . array_search($objItem->SourceName, $normalize_data['SourceNames']) . ", '" . win_time($objItem->TimeWritten) . "', " . array_search($objItem->Type, $normalize_data['Types']) . ", " . array_search($objItem->User, $normalize_data['Users']) . ");");
+			$sth->execute(array($objItem->Category, $objItem->ComputerName, $objItem->EventCode, $objItem->LogFile, $objItem->Message, $objItem->RecordNumber, $objItem->SourceName, win_time($objItem->TimeWritten), $objItem->Type, $objItem->User));
 		};
 	};
 
