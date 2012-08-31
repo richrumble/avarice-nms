@@ -118,75 +118,6 @@ if (empty($form_data['action'])) {
 		$dbh->exec("CREATE TABLE IF NOT EXISTS Types (pkID INTEGER AUTO_INCREMENT, Type VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Type (Type)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
 		$dbh->exec("CREATE TABLE IF NOT EXISTS Users (pkID INTEGER AUTO_INCREMENT, User VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY User (User)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
 		$dbh->exec("CREATE TABLE IF NOT EXISTS Events (pkID INTEGER AUTO_INCREMENT, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT, PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$sth = $dbh->prepare("
-			INSERT INTO Events
-				(
-					CategoryID,
-					ComputerName,
-					EventCodeID,
-					LogfileID,
-					Message,
-					RecordNumber,
-					SourceNameID,
-					TimeWritten,
-					TypeID,
-					UserID
-				)
-			VALUES
-				(
-					(
-						SELECT
-							pkID
-						FROM
-							Categories
-						WHERE
-							Category = ?
-					),
-					?,
-					(
-						SELECT
-							pkID
-						FROM
-							EventCodes
-						WHERE
-							EventCode = ?
-					),
-					(
-						SELECT
-							pkID
-						FROM
-							Logfiles
-						WHERE
-							Logfile = ?
-					),
-					?,
-					?,
-					(
-						SELECT
-							pkID
-						FROM
-							SourceNames
-						WHERE
-							SourceName = ?
-					),
-					?,
-					(
-						SELECT
-							pkID
-						FROM
-							Types
-						WHERE
-							Type = ?
-					),
-					(
-						SELECT
-							pkID
-						FROM
-							Users
-						WHERE
-							User = ?
-					)
-				);");
 	} else{
 		// Needs fixed to actually display error
 		print $sqliterror;
@@ -218,7 +149,75 @@ if (empty($form_data['action'])) {
 			foreach ($snorm as $key => $value) {
 				$dbh->exec("INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "') ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";");
 			};
-			$sth->execute(array($objItem->Category, $objItem->ComputerName, $objItem->EventCode, $objItem->LogFile, $objItem->Message, $objItem->RecordNumber, $objItem->SourceName, win_time($objItem->TimeWritten), $objItem->Type, $objItem->User));
+			$dbh->exec("
+				INSERT INTO Events
+					(
+						CategoryID,
+						ComputerName,
+						EventCodeID,
+						LogfileID,
+						Message,
+						RecordNumber,
+						SourceNameID,
+						TimeWritten,
+						TypeID,
+						UserID
+					)
+				VALUES
+					(
+						(
+							SELECT
+								pkID
+							FROM
+								Categories
+							WHERE
+								Category = '" . $objItem->Category . "'
+						),
+						'" . $objItem->ComputerName . "',
+						(
+							SELECT
+								pkID
+							FROM
+								EventCodes
+							WHERE
+								EventCode = '" . $objItem->EventCode . "'
+						),
+						(
+							SELECT
+								pkID
+							FROM
+								Logfiles
+							WHERE
+								Logfile = '" . $objItem->LogFile . "'
+						),
+						'" . $objItem->Message . "',
+						'" . $objItem->RecordNumber . "',
+						(
+							SELECT
+								pkID
+							FROM
+								SourceNames
+							WHERE
+								SourceName = '" . $objItem->SourceName . "'
+						),
+						'" . win_time($objItem->TimeWritten) . "',
+						(
+							SELECT
+								pkID
+							FROM
+								Types
+							WHERE
+								Type = '" . $objItem->Type . "'
+						),
+						(
+							SELECT
+								pkID
+							FROM
+								Users
+							WHERE
+								User = '" . $objItem->User . "'
+						)
+					);");
 		};
 	};
 
