@@ -106,14 +106,14 @@ if (empty($form_data['action'])) {
 	if (is_file('loglitedb.sqlite3')) {
 		unlink('loglitedb.sqlite3');
 	};
-	if ($sldb = new PDO('sqlite:loglitedb.sqlite3')) {
-		$sldb->exec("CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128))");
-		$sldb->exec("CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128))");
-		$sldb->exec("CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128))");
-		$sldb->exec("CREATE TABLE SourceNames (pkID INTEGER PRIMARY KEY, SourceName VARCHAR(128))");
-		$sldb->exec("CREATE TABLE Types (pkID INTEGER PRIMARY KEY, Type VARCHAR(128))");
-		$sldb->exec("CREATE TABLE Users (pkID INTEGER PRIMARY KEY, User VARCHAR(128))");
-		$sldb->exec("CREATE TABLE Events (pkID INTEGER PRIMARY KEY, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT)");
+	if ($sldb = new PDO('mysql:host=localhost;dbname=logsearch','logsearch','UrCGG5e8emb9xffv')) {
+		$sldb->exec("CREATE TABLE IF NOT EXISTS Categories (pkID INTEGER AUTO_INCREMENT, Category VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sldb->exec("CREATE TABLE IF NOT EXISTS EventCodes (pkID INTEGER AUTO_INCREMENT, EventCode VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sldb->exec("CREATE TABLE IF NOT EXISTS Logfiles (pkID INTEGER AUTO_INCREMENT, Logfile VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sldb->exec("CREATE TABLE IF NOT EXISTS SourceNames (pkID INTEGER AUTO_INCREMENT, SourceName VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sldb->exec("CREATE TABLE IF NOT EXISTS Types (pkID INTEGER AUTO_INCREMENT, Type VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sldb->exec("CREATE TABLE IF NOT EXISTS Users (pkID INTEGER AUTO_INCREMENT, User VARCHAR(128), PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
+		$sldb->exec("CREATE TABLE IF NOT EXISTS Events (pkID INTEGER AUTO_INCREMENT, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT, PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
 	} else{
 		print $sqliterror;
 	};
