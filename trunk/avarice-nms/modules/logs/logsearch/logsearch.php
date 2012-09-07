@@ -2,6 +2,7 @@
 $wbemFlagReturnImmediately=0x10;
 $wbemFlagForwardOnly=0x20;
 $WbemAuthenticationLevelPktPrivacy=6;
+$batchsize = 1000;
 
 function win_time($timestr) {
  return substr($timestr, 4, 2) . "/" . substr($timestr, 6, 2) . "/" .
@@ -145,25 +146,25 @@ if (empty($form_data['action'])) {
 			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
 		};
 		$colItems = $objWMIService->ExecQuery($query);
+		$x = 0;
+		$total = 0;
+		$query = "
+				INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES";
 		foreach ($colItems as $objItem) {
 			foreach ($snorm as $key => $value) {
-				$dbh->exec("INSERT INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "') ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";");
+				if ($x == 0) {
+					${"norm_query_" . $value} = "INSERT INTO " . $value . " (" . $key . ") VALUES ";
+				};
+				if ($x < $batchsize) {
+					${"norm_query_" . $value} .= "('" . $objItem->$key . "')";
+				} else if ($x == $batchsize) {
+					${"norm_query_" . $value} = substr(${"norm_query_" . $value}, 0, -2) . "ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";";
+					$dbh->exec(${"norm_query_" . $value});
+				};
 			};
-			$dbh->exec("
-				INSERT INTO Events
-					(
-						CategoryID,
-						ComputerName,
-						EventCodeID,
-						LogfileID,
-						Message,
-						RecordNumber,
-						SourceNameID,
-						TimeWritten,
-						TypeID,
-						UserID
-					)
-				VALUES
+			if ($x < $batchsize) {
+				$x++;
+				$query .= "
 					(
 						(
 							SELECT
@@ -217,8 +218,24 @@ if (empty($form_data['action'])) {
 							WHERE
 								User = '" . $objItem->User . "'
 						)
-					);");
+					), ";
+			} else if ($x == $batchsize) {
+				$total += $x;
+				$x = 0;
+				$query = substr($query, 0, -2);
+				$dbh->exec($query);
+				$query = "
+					INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES";
+			};
 		};
+		foreach ($snorm as $key => $value) {
+			${"norm_query_" . $value} = substr(${"norm_query_" . $value}, 0, -2) . "ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";";
+			$dbh->exec(${"norm_query_" . $value});
+		};
+		$total += $x;
+		$query = substr($query, 0, -2);
+		$dbh->exec($query);
+		print $total;
 	};
 
 ?>
