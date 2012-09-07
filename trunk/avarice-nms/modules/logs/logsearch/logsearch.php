@@ -156,8 +156,8 @@ if (empty($form_data['action'])) {
 					${"norm_query_" . $value} = "INSERT INTO " . $value . " (" . $key . ") VALUES ";
 				};
 				if ($x < $batchsize) {
-					${"norm_query_" . $value} .= "('" . $objItem->$key . "')";
-				} else if ($x == $batchsize) {
+					${"norm_query_" . $value} .= "('" . $objItem->$key . "'), ";
+				} else {
 					${"norm_query_" . $value} = substr(${"norm_query_" . $value}, 0, -2) . "ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";";
 					$dbh->exec(${"norm_query_" . $value});
 				};
@@ -219,7 +219,7 @@ if (empty($form_data['action'])) {
 								User = '" . $objItem->User . "'
 						)
 					), ";
-			} else if ($x == $batchsize) {
+			} else {
 				$total += $x;
 				$x = 0;
 				$query = substr($query, 0, -2);
