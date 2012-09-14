@@ -104,6 +104,23 @@ if (empty($form_data['action'])) {
 
 <?php
 } else if ($form_data['action'] == "form2") {
+	if (is_file('loglitedb.sqlite3')) {
+		unlink('loglitedb.sqlite3');
+	};
+	
+	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
+		$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );  
+		$dbh->exec("CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128) UNIQUE)");
+		$dbh->exec("CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128) UNIQUE)");
+		$dbh->exec("CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128) UNIQUE)");
+		$dbh->exec("CREATE TABLE SourceNames (pkID INTEGER PRIMARY KEY, SourceName VARCHAR(128) UNIQUE)");
+		$dbh->exec("CREATE TABLE Types (pkID INTEGER PRIMARY KEY, Type VARCHAR(128) UNIQUE)");
+		$dbh->exec("CREATE TABLE Users (pkID INTEGER PRIMARY KEY, User VARCHAR(128) UNIQUE)");
+		$dbh->exec("CREATE TABLE Events (pkID INTEGER PRIMARY KEY, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT)");
+	} catch(PDOException $e) {
+		echo $e->getMessage();
+	};
+/* MySql Code	
 	if ($dbh = new PDO('mysql:host=localhost;dbname=logsearch','logsearch','UrCGG5e8emb9xffv')) {
 		$dbh->exec("DROP TABLE IF EXISTS Categories;");
 		$dbh->exec("DROP TABLE IF EXISTS EventCodes;");
@@ -123,6 +140,7 @@ if (empty($form_data['action'])) {
 		// Needs fixed to actually display error
 		print $sqliterror;
 	};
+*/
 	if (empty($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
@@ -148,10 +166,24 @@ if (empty($form_data['action'])) {
 		$colItems = $objWMIService->ExecQuery($query);
 		$x = 0;
 		$total = 0;
+		$query = "BEGIN TRANSACTION; ";
+/* MySQL code
 		$query = "
 				INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES";
+*/
 		foreach ($colItems as $objItem) {
 			foreach ($snorm as $key => $value) {
+				if ($x == 0) {
+					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
+				};
+				${"norm_query_" . $value} .= "
+				REPLACE INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "'); ";
+				if ($x >= $batchsize) {
+					${"norm_query_" . $value} .= " COMMIT;";
+					$dbh->exec(${"norm_query_" . $value});
+					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
+				};
+/* MySQL code
 				if ($x == 0) {
 					${"norm_query_" . $value} = "INSERT INTO " . $value . " (" . $key . ") VALUES ";
 				};
@@ -161,7 +193,9 @@ if (empty($form_data['action'])) {
 					${"norm_query_" . $value} = substr(${"norm_query_" . $value}, 0, -2) . "ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";";
 					$dbh->exec(${"norm_query_" . $value});
 				};
+*/
 			};
+/* MySQL code
 			if ($x < $batchsize) {
 				$x++;
 				$query .= "
@@ -227,15 +261,81 @@ if (empty($form_data['action'])) {
 				$query = "
 					INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES";
 			};
+*/
+			$query .= "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES
+					(
+						(
+							SELECT
+								pkID
+							FROM
+								Categories
+							WHERE
+								Category = '" . $objItem->Category . "'
+						),
+						'" . $objItem->ComputerName . "',
+						(
+							SELECT
+								pkID
+							FROM
+								EventCodes
+							WHERE
+								EventCode = '" . $objItem->EventCode . "'
+						),
+						(
+							SELECT
+								pkID
+							FROM
+								Logfiles
+							WHERE
+								Logfile = '" . $objItem->LogFile . "'
+						),
+						'" . str_replace(array("'"), "", $objItem->Message) . "',
+						'" . $objItem->RecordNumber . "',
+						(
+							SELECT
+								pkID
+							FROM
+								SourceNames
+							WHERE
+								SourceName = '" . $objItem->SourceName . "'
+						),
+						'" . win_time($objItem->TimeWritten) . "',
+						(
+							SELECT
+								pkID
+							FROM
+								Types
+							WHERE
+								Type = '" . $objItem->Type . "'
+						),
+						(
+							SELECT
+								pkID
+							FROM
+								Users
+							WHERE
+								User = '" . $objItem->User . "'
+						)
+					); ";
+			if ($x < $batchsize) {
+				$x++;
+			} else {
+				$total +=$x;
+				$x = 0;
+				$dbh->exec($query . " COMMIT;");
+				print $query . " COMMIT;";
+				$query = "
+					BEGIN TRANSACTION; ";
+			};
+
 		};
 		foreach ($snorm as $key => $value) {
-			${"norm_query_" . $value} = substr(${"norm_query_" . $value}, 0, -2) . "ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";";
-			$dbh->exec(${"norm_query_" . $value});
+			$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
 		};
-		$total += $x;
-		$query = substr($query, 0, -2);
-		$dbh->exec($query);
-		print $total;
+		$total +=$x;
+		print $total . "***";
+		$dbh->exec($query . " COMMIT;");
+		print $query . " COMMIT;";
 	};
 
 ?>
