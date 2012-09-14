@@ -109,7 +109,8 @@ if (empty($form_data['action'])) {
 	};
 	
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
-		$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );  
+		$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+		$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
 		$dbh->exec("CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128) UNIQUE)");
 		$dbh->exec("CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128) UNIQUE)");
 		$dbh->exec("CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128) UNIQUE)");
@@ -323,7 +324,7 @@ if (empty($form_data['action'])) {
 				$total +=$x;
 				$x = 0;
 				$dbh->exec($query . " COMMIT;");
-				print $query . " COMMIT;";
+				//print $query . " COMMIT;";
 				$query = "
 					BEGIN TRANSACTION; ";
 			};
@@ -335,9 +336,10 @@ if (empty($form_data['action'])) {
 		$total +=$x;
 		print $total . "***";
 		$dbh->exec($query . " COMMIT;");
-		print $query . " COMMIT;";
+		//print $query . " COMMIT;";
 	};
-
+$timeTaken = time() - $_SERVER['REQUEST_TIME'];
+echo "This script took $timeTaken to run.";
 ?>
 	<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
      <fieldset>
