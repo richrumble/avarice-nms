@@ -47,7 +47,7 @@ if (empty($form_data['action'])) {
 		<b class="r0"></b> <b class="r1"></b> <b class="r2"></b> <b class="r3"></b> <b class="r4"></b>
 	 </b>
 	 <div class="cell">
-		<form class = "formtodiv" targetdiv = "form2" action = "logsearch.php" method = "POST">
+		<form class = "formtodiv" targetdiv = "mainresults" action = "logsearch.php" method = "POST">
 		 <fieldset>
 			<legend>Event Log Search</legend>
 			<label class="creds">FQDN or IP Target(s) | (csv)</label>
@@ -60,7 +60,6 @@ if (empty($form_data['action'])) {
 			<input type = "submit" value = "Connect" />
 	 </fieldset>
 	</form>
-	<div id="form2"></div>
 	 </div> <!-- End Cell Div -->
 	 <b class="rbottom">
 		<b class="r4"></b> <b class="r3"></b> <b class="r2"></b> <b class="r1"></b><b class="r0"></b>
@@ -73,7 +72,7 @@ if (empty($form_data['action'])) {
 		<b class="r0"></b> <b class="r1"></b> <b class="r2"></b> <b class="r3"></b> <b class="r4"></b>
 	 </b>
 	<div class="cell">
-	 <div id = "results">
+	 <div id = "mainresults">
 		<p>EVENT LOG SEARCH: Results will appear here. The default credentials being used are typically shown in the form, if nothing is shown
 			assume the credentials that this program is being run under are being used and the LocalHost is the Target. You can specify multiple
 			hosts on the Target(s) form input by comma separating FQDN's or IP's. Unless you input a Username <b>and</b> Password the default
@@ -116,27 +115,6 @@ if (empty($form_data['action'])) {
 	} catch(PDOException $e) {
 		echo $e->getMessage();
 	};
-/* MySql Code 
-	if ($dbh = new PDO('mysql:host=localhost;dbname=logsearch','logsearch','UrCGG5e8emb9xffv')) {
-		$dbh->exec("DROP TABLE IF EXISTS Categories;");
-		$dbh->exec("DROP TABLE IF EXISTS EventCodes;");
-		$dbh->exec("DROP TABLE IF EXISTS Logfiles;");
-		$dbh->exec("DROP TABLE IF EXISTS SourceNames;");
-		$dbh->exec("DROP TABLE IF EXISTS Types;");
-		$dbh->exec("DROP TABLE IF EXISTS Users;");
-		$dbh->exec("DROP TABLE IF EXISTS Events;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS Categories (pkID INTEGER AUTO_INCREMENT, Category VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Category (Category)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS EventCodes (pkID INTEGER AUTO_INCREMENT, EventCode VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY EventCode (EventCode)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS Logfiles (pkID INTEGER AUTO_INCREMENT, Logfile VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Logfile (Logfile)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS SourceNames (pkID INTEGER AUTO_INCREMENT, SourceName VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY SourceName (SourceName)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS Types (pkID INTEGER AUTO_INCREMENT, Type VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY Type (Type)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS Users (pkID INTEGER AUTO_INCREMENT, User VARCHAR(128), PRIMARY KEY (pkID), UNIQUE KEY User (User)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-		$dbh->exec("CREATE TABLE IF NOT EXISTS Events (pkID INTEGER AUTO_INCREMENT, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT, PRIMARY KEY (pkID)) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1;");
-	} else{
-		// Needs fixed to actually display error
-		print $sqliterror;
-	};
-*/
 	if (empty($form_data['fqdn'])) {
 		$form_data['fqdn'] = ".";
 	};
@@ -164,10 +142,6 @@ if (empty($form_data['action'])) {
 		$x = 0;
 		$total = 0;
 		$query = "BEGIN TRANSACTION; ";
-/* MySQL code
-		$query = "
-				INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES";
-*/
 		foreach ($colItems as $objItem) {
 			foreach ($snorm as $key => $value) {
 				if ($x == 0) {
@@ -180,85 +154,7 @@ if (empty($form_data['action'])) {
 					$dbh->exec(${"norm_query_" . $value});
 					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
 				};
-/* MySQL code
-				if ($x == 0) {
-					${"norm_query_" . $value} = "INSERT INTO " . $value . " (" . $key . ") VALUES ";
-				};
-				if ($x < $batchsize) {
-					${"norm_query_" . $value} .= "('" . $objItem->$key . "'), ";
-				} else {
-					${"norm_query_" . $value} = substr(${"norm_query_" . $value}, 0, -2) . "ON DUPLICATE KEY UPDATE " . $key . " = " . $key . ";";
-					$dbh->exec(${"norm_query_" . $value});
-				};
-*/
 			};
-/* MySQL code
-			if ($x < $batchsize) {
-				$x++;
-				$query .= "
-					(
-						(
-							SELECT
-								pkID
-							FROM
-								Categories
-							WHERE
-								Category = '" . $objItem->Category . "'
-						),
-						'" . $objItem->ComputerName . "',
-						(
-							SELECT
-								pkID
-							FROM
-								EventCodes
-							WHERE
-								EventCode = '" . $objItem->EventCode . "'
-						),
-						(
-							SELECT
-								pkID
-							FROM
-								Logfiles
-							WHERE
-								Logfile = '" . $objItem->LogFile . "'
-						),
-						'" . $objItem->Message . "',
-						'" . $objItem->RecordNumber . "',
-						(
-							SELECT
-								pkID
-							FROM
-								SourceNames
-							WHERE
-								SourceName = '" . $objItem->SourceName . "'
-						),
-						'" . win_time($objItem->TimeWritten) . "',
-						(
-							SELECT
-								pkID
-							FROM
-								Types
-							WHERE
-								Type = '" . $objItem->Type . "'
-						),
-						(
-							SELECT
-								pkID
-							FROM
-								Users
-							WHERE
-								User = '" . $objItem->User . "'
-						)
-					), ";
-			} else {
-				$total += $x;
-				$x = 0;
-				$query = substr($query, 0, -2);
-				$dbh->exec($query);
-				$query = "
-					INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES";
-			};
-*/
 			$query .= "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES
 					(
 						(
@@ -320,7 +216,6 @@ if (empty($form_data['action'])) {
 				$total +=$x;
 				$x = 0;
 				$dbh->exec($query . " COMMIT;");
-				//print $query . " COMMIT;";
 				$query = "
 					BEGIN TRANSACTION; ";
 			};
@@ -329,49 +224,51 @@ if (empty($form_data['action'])) {
 		foreach ($snorm as $key => $value) {
 			$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
 		};
-		$total +=$x;
-		print $total . "***";
 		$dbh->exec($query . " COMMIT;");
-		//print $query . " COMMIT;";
 	};
-$timeTaken = time() - $_SERVER['REQUEST_TIME'];
-echo "This script took $timeTaken to run.";
 ?>
-	<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
-		 <fieldset>
-		<input type = "hidden" name = "action" value = "search" />
-			<h3>Choose Log(s)</h3>
-			<label>
-			 <input type = "radio" name = "logfile" value = "all" checked="checked" />All&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-			</label>
-			<label>
-			 <input class = "right" type = "radio" name = "logfile" value = "Application" />Application
-			</label><br />
-			<label>
-			 <input type = "radio" name = "logfile" value = "Security" />Security
-			</label>
-			<label>
-			 <input class = "right" type = "radio" name = "logfile" value = "System" />System
-			</label>
-			<h3>Timeframe</h3>
-			<label>
-				<input type = "radio" name = "timeframe" value = "1 day" checked="checked" />All&nbsp;Time
-			</label><br />
-			<label>
-				<input type = "radio" name = "timeframe" value = "-1 hour" />Last Hour&nbsp;
-			</label>
-			<label>
-				<input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day
-		 </label><br />
-			<label>
-				<input type = "radio" name = "timeframe" value = "-1 week" />Last Week
-			</label>
-			<label>
-				<input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month
-			</label><br />
-			<input type = "submit" value = "Search" />
-		 </fieldset>
+	<div id="filters">
+		<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
+			<fieldset>
+				<input type = "hidden" name = "action" value = "search" />
+				<h3>Choose Log(s)</h3>
+				<label>
+					<select multiple="multiple" name="filter_logfile" size="3">
+						<option value="all">All</option>
+<?php
+	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
+		foreach ($dbh->query("SELECT * FROM LogFiles ORDER BY Logfile") as $row) {
+			print "
+						<option value=\"" . $row['pkID'] . "\">" . $row['Logfile'] . "</option>";
+		}
+	} catch(PDOException $e) {
+		echo $e->getMessage();
+	};
+?>
+					</select>
+				</label>
+				<h3>Timeframe</h3>
+				<label>
+					<input type = "radio" name = "timeframe" value = "1 day" checked="checked" />All&nbsp;Time
+				</label><br />
+				<label>
+					<input type = "radio" name = "timeframe" value = "-1 hour" />Last Hour&nbsp;
+				</label>
+				<label>
+					<input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day
+				</label><br />
+				<label>
+					<input type = "radio" name = "timeframe" value = "-1 week" />Last Week
+				</label>
+				<label>
+					<input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month
+				</label><br />
+				<input type = "submit" value = "Search" />
+			</fieldset>
 		</form>
+	</div>
+	<div id="results">
+	</div>
 <?php
 } else if ($form_data['action'] == "search") {
 	$output = "
