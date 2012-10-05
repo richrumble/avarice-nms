@@ -2,14 +2,23 @@
 $batchsize = 1000;
 
 function win_time($timestr) {
- return substr($timestr, 4, 2) . "/" . substr($timestr, 6, 2) . "/" .
- substr($timestr, 0, 4) . " " . substr($timestr, 8, 2) . ":" .
+ return substr($timestr, 0, 4) . "-" . substr($timestr, 4, 2) . "-" . substr($timestr, 6, 2)
+  . " " . substr($timestr, 8, 2) . ":" .
  substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2); //leaving off the TimeZone offset.
  // substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2) . " " . substr($timestr, -4);
 };
 
 date_default_timezone_set('America/Indiana/Indianapolis');
 $form_data = $_REQUEST;
+
+$snorm = array(
+	"Category"   => "Categories",
+	"EventCode"  => "EventCodes",
+	"LogFile"    => "Logfiles",
+	"SourceName" => "SourceNames",
+	"Type"       => "Types",
+	"User"       => "Users"
+);
 if (empty($form_data['action'])) {
 
 ?>
@@ -103,15 +112,16 @@ if (empty($form_data['action'])) {
 	};
 	
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
+		$query = "CREATE TABLE Events (pkID INTEGER PRIMARY KEY, ComputerName VARCHAR (256), Message TEXT, RecordNumber INT, TimeWritten TEXT, ";
 		$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 		$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
-		$dbh->exec("CREATE TABLE Categories (pkID INTEGER PRIMARY KEY, Category VARCHAR(128) UNIQUE)");
-		$dbh->exec("CREATE TABLE EventCodes (pkID INTEGER PRIMARY KEY, EventCode VARCHAR(128) UNIQUE)");
-		$dbh->exec("CREATE TABLE Logfiles (pkID INTEGER PRIMARY KEY, Logfile VARCHAR(128) UNIQUE)");
-		$dbh->exec("CREATE TABLE SourceNames (pkID INTEGER PRIMARY KEY, SourceName VARCHAR(128) UNIQUE)");
-		$dbh->exec("CREATE TABLE Types (pkID INTEGER PRIMARY KEY, Type VARCHAR(128) UNIQUE)");
-		$dbh->exec("CREATE TABLE Users (pkID INTEGER PRIMARY KEY, User VARCHAR(128) UNIQUE)");
-		$dbh->exec("CREATE TABLE Events (pkID INTEGER PRIMARY KEY, CategoryID INT, ComputerName VARCHAR (256), EventCodeID INT, LogfileID INT, Message TEXT, RecordNumber INT, SourceNameID INT, TimeWritten VARCHAR(10), TypeID INT, UserID INT)");
+		foreach ($snorm as $key => $value) {
+			$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $key . " VARCHAR(128) UNIQUE)");
+			$query .= $key . "ID INT, ";
+		};
+		$query = substr($query, 0, -2) . ")";
+		#print $query;
+		$dbh->exec($query);
 	} catch(PDOException $e) {
 		echo $e->getMessage();
 	};
@@ -119,14 +129,6 @@ if (empty($form_data['action'])) {
 		$form_data['fqdn'] = ".";
 	};
 	$computers = explode(",", $form_data['fqdn']);
-	$snorm = array(
-		"Category"   => "Categories",
-		"EventCode"  => "EventCodes",
-		"LogFile"    => "Logfiles",
-		"SourceName" => "SourceNames",
-		"Type"       => "Types",
-		"User"       => "Users"
-	);
 	$query = "Select * from Win32_NTLogEvent";
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
@@ -148,7 +150,7 @@ if (empty($form_data['action'])) {
 					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
 				};
 				${"norm_query_" . $value} .= "
-				REPLACE INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "'); ";
+				INSERT OR IGNORE INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "'); ";
 				if ($x >= $batchsize) {
 					${"norm_query_" . $value} .= " COMMIT;";
 					$dbh->exec(${"norm_query_" . $value});
@@ -231,38 +233,27 @@ if (empty($form_data['action'])) {
 		<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
 			<fieldset>
 				<input type = "hidden" name = "action" value = "search" />
-				<h3>Choose Log(s)</h3>
-				<label>
-					<select multiple="multiple" name="filter_logfile" size="3">
-						<option value="all">All</option>
 <?php
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
-		foreach ($dbh->query("SELECT * FROM LogFiles ORDER BY Logfile") as $row) {
+		foreach ($snorm as $key => $value) {
 			print "
-						<option value=\"" . $row['pkID'] . "\">" . $row['Logfile'] . "</option>";
-		}
+					<h3>Choose " . $key . "(s)</h3>
+					<label>
+						<select multiple=\"multiple\" name=\"filter_" . $key . "[]\" size=\"3\">
+							<option value=\"all\" selected>All</option>";
+			foreach ($dbh->query("SELECT * FROM " . $value . " ORDER BY " . $key . " COLLATE NOCASE ASC") as $row) {
+				print "
+							<option value=\"" . $row['pkID'] . "\">" . $row[$key] . "</option>";
+			};
+			print "
+					</select>
+				</label>";
+		};
 	} catch(PDOException $e) {
 		echo $e->getMessage();
 	};
 ?>
-					</select>
-				</label>
-				<h3>Timeframe</h3>
-				<label>
-					<input type = "radio" name = "timeframe" value = "1 day" checked="checked" />All&nbsp;Time
-				</label><br />
-				<label>
-					<input type = "radio" name = "timeframe" value = "-1 hour" />Last Hour&nbsp;
-				</label>
-				<label>
-					<input class = "right" type = "radio" name = "timeframe" value = "-1 day" />Last Day
-				</label><br />
-				<label>
-					<input type = "radio" name = "timeframe" value = "-1 week" />Last Week
-				</label>
-				<label>
-					<input class = "right" type = "radio" name = "timeframe" value = "-1 month" />Last Month
-				</label><br />
+				<input type = "hidden" name = "action" value = "search" />
 				<input type = "submit" value = "Search" />
 			</fieldset>
 		</form>
@@ -271,72 +262,45 @@ if (empty($form_data['action'])) {
 	</div>
 <?php
 } else if ($form_data['action'] == "search") {
-	$output = "
-		<script type=\"text/javascript\">
-			\$(document).ready(function() {
-				\$(\"#results tr\").mouseover(function(){\$(this).addClass(\"over\");}).mouseout(function(){\$(this).removeClass(\"over\");});
-				\$(\"#results tr:odd\").addClass(\"odd\");
-				\$(\"#results tr:even\").addClass(\"even\");
-			});
-		</script>
-		<h1>Results:</h1>
-		<hr />";
-	
-	$countshead = "
-		<h1>Filter By:</h1>
-		<hr />
-		<div>
-			<table>
-				<tbody>
-				<tr>
-					<th onclick=\"filterparams('category');\">Categories </th>
-					<th onclick=\"filterparams('eventcode');\">EventCodes </th>
-					<th onclick=\"filterparams('logfile');\">LogFiles </th>
-					<th onclick=\"filterparams('sourcename');\">SourceNames </th>
-					<th onclick=\"filterparams('type');\">Types </th>
-					<th onclick=\"filterparams('user');\">Users</th>
-				</tr>
-				</tbody>
-			</table>";
-	foreach ($counts as $cate => $dets) {
-		if ($cate != "SourceName") {
-			$xlimit = 6;
-		} else {
-			$xlimit = 3;
-		};
-		$countshead .= "
-						<div style=\"display: none;\" class=\"filtercat\" id=\"" . strtolower($cate) . "\">
-							<table>
-								<tbody>";
-		uksort($dets, 'strnatcasecmp');
-		$x = 0;
-		foreach ($dets as $det => $dcount) {
-			$x++;
-			if ($x == 1) {
-				$countshead .= "
-								<tr>";
+	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
+		$query = "SELECT Events.ComputerName, Events.Message, Events.RecordNumber, Events.TimeWritten, ";
+		$qwhere = "";
+		$join = "";
+		foreach ($snorm as $key => $value) {
+			$query .= $value . "." . $key . ", ";
+			$join .= "JOIN " . $value . " ON Events." . $key . "ID = " . $value . ".pkID ";
+			if (!in_array("all", $form_data["filter_" . $key])) {
+				$qwhere .= "AND " . $key . "ID IN (";
+				foreach($form_data["filter_" . $key] as $filter) {
+					$qwhere .= $filter . ", ";
+				};
+				$qwhere = substr($qwhere, 0, -2) . ") ";
 			};
-			$countshead .= "
-									<td><input type = \"checkbox\" name = \"check_" . $cate . "\" value = \"" . $det . "\" onchange = \"filterlogs('check_" . $cate . "')\" checked></td>
-									<td>" . $det . "</td>";
-			if ($x == $xlimit) {
-				$countshead .= "
-								</tr>";
-				$x = 0;
-			}
 		};
-		$countshead .= "
-								</tbody>
-							</table>
-						</div>";
+		$query = substr($query, 0, -2) . " FROM Events " . $join . "WHERE " . substr($qwhere, 3) . " ORDER BY TimeWritten DESC";
+		$sth = $dbh->prepare($query);
+		$sth->execute();
+		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
+		print number_format(count($result)) . " Events found.<br />";
+		foreach ($result as $row) {
+			print "
+				<hr>
+				<table>";
+			foreach ($row as $key => $value) {
+				if ($key != "pkID") {
+					print "
+						<tr>
+							<td>" . $key . ":</td>
+							<td>" . $value . "</td>
+						</tr>";
+				};
+			};
+			print "
+				</table>";
+		};
+	} catch(PDOException $e) {
+		echo $e->getMessage();
 	};
-	$countshead .= "
-					</td>
-				</tr>
-				</tbody>
-			</table>
-		</div>";
-	print $countshead . $output;
 };
 
 ?>
