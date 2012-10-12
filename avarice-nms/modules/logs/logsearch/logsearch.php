@@ -1,5 +1,6 @@
 <?php
-$batchsize = 1000;
+$batchsize     = 1000;
+$displayamount = 200;
 
 function win_time($timestr) {
  return substr($timestr, 0, 4) . "-" . substr($timestr, 4, 2) . "-" . substr($timestr, 6, 2)
@@ -237,22 +238,29 @@ if (empty($form_data['action'])) {
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
 		foreach ($snorm as $key => $value) {
 			print "
-					<h3>Choose " . $key . "(s)</h3>
-					<label>
-						<select multiple=\"multiple\" name=\"filter_" . $key . "[]\" size=\"3\">
-							<option value=\"all\" selected>All</option>";
+					<table class=\"filtertable\">
+						<tr>
+							<th>Choose " . $key . "(s)</th>
+						</tr>
+						<tr>
+							<td>
+								<select multiple=\"multiple\" name=\"filter_" . $key . "[]\" size=\"3\">
+									<option value=\"all\" selected>All</option>";
 			foreach ($dbh->query("SELECT * FROM " . $value . " ORDER BY " . $key . " COLLATE NOCASE ASC") as $row) {
 				print "
-							<option value=\"" . $row['pkID'] . "\">" . $row[$key] . "</option>";
+									<option value=\"" . $row['pkID'] . "\">" . $row[$key] . "</option>";
 			};
 			print "
-					</select>
-				</label>";
+								</select>
+							</td>
+						</tr>
+					</table>";
 		};
 	} catch(PDOException $e) {
 		echo $e->getMessage();
 	};
 ?>
+				<br />
 				<input type = "hidden" name = "action" value = "search" />
 				<input type = "submit" value = "Search" />
 			</fieldset>
@@ -263,6 +271,9 @@ if (empty($form_data['action'])) {
 <?php
 } else if ($form_data['action'] == "search") {
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
+		if (!isset($form_data['pageNum'])) {
+			$form_data['pageNum'] = 1;
+		};
 		$query = "SELECT Events.ComputerName, Events.Message, Events.RecordNumber, Events.TimeWritten, ";
 		$qwhere = "";
 		$join = "";
@@ -277,11 +288,52 @@ if (empty($form_data['action'])) {
 				$qwhere = substr($qwhere, 0, -2) . ") ";
 			};
 		};
-		$query = substr($query, 0, -2) . " FROM Events " . $join . "WHERE " . substr($qwhere, 3) . " ORDER BY TimeWritten DESC";
+		if ($qwhere != "") {
+			$qwhere = "WHERE " . substr($qwhere, 3);
+		};
+		$offset = ($form_data['pageNum'] - 1) * $displayamount;
+		$countquery = "SELECT COUNT(*) FROM Events " . $qwhere;
+		$sth = $dbh->prepare($countquery);
+		$sth->execute();
+		$result = $sth->fetchAll();
+		$totalCount = $result[0][0];
+		$query = substr($query, 0, -2) . " FROM Events " . $join . $qwhere . " ORDER BY TimeWritten DESC LIMIT " . $offset . "," . $displayamount;
 		$sth = $dbh->prepare($query);
 		$sth->execute();
 		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
-		print number_format(count($result)) . " Events found.<br />";
+		$requesttoform = "";
+		foreach ($form_data as $key => $value) {
+			if (is_array($value)) {
+				foreach ($value as $vv) {
+					$requesttoform .=  "
+						<input type=\"hidden\" name=\"" . $key . "[]\" value=\"" . $vv . "\" />";
+				};
+			} else {
+				if ($key != "pageNum") {
+					$requesttoform .=  "
+						<input type=\"hidden\" name=\"" . $key . "\" value=\"" . $value . "\" />";
+				};
+			};
+		};
+		$pagination = "<< ";
+		for ($x = ($form_data['pageNum'] - 2); $x <= ($form_data['pageNum'] + 2); $x++) {
+			if ($x > 0 and $x < (ceil($totalCount / $displayamount))) {
+				if ($x != $form_data['pageNum']) {
+					$pagination .= "
+						<form style=\"display: inline;\" class = \"formtodiv\" targetdiv = \"results\" action = \"logsearch.php\" method = \"POST\">" . $requesttoform . "
+							<input type=\"hidden\" name=\"pageNum\" value=\"" . $x . "\" />
+							<a href=\"#\" onclick=\"\$(this).closest('form').submit()\">" . $x . "</a>
+						</form>";
+				} else {
+					$pagination .= $x . " ";
+				};
+			};
+		};
+		$pagination = $pagination . ">>";
+		print "
+				<div> " . $form_data['pageNum'] . "
+					" . number_format(count($result)) . " of " . number_format($totalCount) . " Events. " . $pagination . "
+				</div>";
 		foreach ($result as $row) {
 			print "
 				<hr>
