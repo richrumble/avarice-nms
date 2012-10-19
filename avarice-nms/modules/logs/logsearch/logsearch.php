@@ -234,6 +234,7 @@ if (empty($form_data['action'])) {
 		<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
 			<fieldset>
 				<input type = "hidden" name = "action" value = "search" />
+				Search: <input size = 30 type = "text" id = "searchString" name = "searchString" onkeyup="$(this).closest('form').submit();"/>
 <?php
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
 		foreach ($snorm as $key => $value) {
@@ -288,6 +289,9 @@ if (empty($form_data['action'])) {
 				$qwhere = substr($qwhere, 0, -2) . ") ";
 			};
 		};
+		if (!empty($form_data['searchString'])) {
+			$qwhere = "AND Events.Message LIKE '%" . $form_data['searchString'] . "%' " . $qwhere;
+		};
 		if ($qwhere != "") {
 			$qwhere = "WHERE " . substr($qwhere, 3);
 		};
@@ -317,7 +321,7 @@ if (empty($form_data['action'])) {
 		};
 		$pagination = "<< ";
 		for ($x = ($form_data['pageNum'] - 2); $x <= ($form_data['pageNum'] + 2); $x++) {
-			if ($x > 0 and $x < (ceil($totalCount / $displayamount))) {
+			if ($x > 0 and $x <= (ceil($totalCount / $displayamount))) {
 				if ($x != $form_data['pageNum']) {
 					$pagination .= "
 						<form style=\"display: inline;\" class = \"formtodiv\" targetdiv = \"results\" action = \"logsearch.php\" method = \"POST\">" . $requesttoform . "
@@ -331,8 +335,8 @@ if (empty($form_data['action'])) {
 		};
 		$pagination = $pagination . ">>";
 		print "
-				<div> " . $form_data['pageNum'] . "
-					" . number_format(count($result)) . " of " . number_format($totalCount) . " Events. " . $pagination . "
+				<div>
+					" . ((($form_data['pageNum'] - 1) * $displayamount) + 1) . " to " . ((($form_data['pageNum'] - 1) * $displayamount) + number_format(count($result))) . " of " . number_format($totalCount) . " Events. " . $pagination . "
 				</div>";
 		foreach ($result as $row) {
 			print "
