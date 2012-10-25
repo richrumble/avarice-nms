@@ -233,15 +233,13 @@ if (empty($form_data['action'])) {
 	<div id="filters">
 		<form class = "formtodiv" targetdiv = "results" action = "logsearch.php" method = "POST">
 			<fieldset>
-				<input type = "hidden" name = "action" value = "search" />
-				Search: <input size = 30 type = "text" id = "searchString" name = "searchString" onkeyup="$(this).closest('form').submit();"/>
 <?php
 	try {$dbh = new PDO('sqlite:loglitedb.sqlite3');
 		foreach ($snorm as $key => $value) {
 			print "
 					<table class=\"filtertable\">
 						<tr>
-							<th>Choose " . $key . "(s)</th>
+							<th>" . $key . "(s)</th>
 						</tr>
 						<tr>
 							<td>
@@ -264,6 +262,10 @@ if (empty($form_data['action'])) {
 				<br />
 				<input type = "hidden" name = "action" value = "search" />
 				<input type = "submit" value = "Search" />
+				<br />
+				<input type = "hidden" name = "action" value = "search" />
+				<br />
+				<input size = 30 type = "text" id = "searchString" name = "searchString" onkeyup="$(this).closest('form').submit();"/>
 			</fieldset>
 		</form>
 	</div>
