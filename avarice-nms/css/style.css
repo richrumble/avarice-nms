@@ -12,7 +12,7 @@ b.r2{margin: 0 3px;}
 b.r3{margin: 0 2px;}
 b.r4{margin: 0 1px; height: 2px;} 
 b.r5{margin: 0 1px; height: 2px;} 
-.cell {margin: 0 0;padding:1px 0 1px;display:inline-block;;border-left:6px solid #2A551D;border-right:6px solid #2A551D; min-width: 200px;}
+.cell {margin: 0 0;padding:1px 0 1px;display:inline-block;border-left:6px solid #2A551D;border-right:6px solid #2A551D; min-width: 200px;}
 form{border:0 none;margin:0;padding:0;}
 p,ul,ol{color:#aaaaaa; padding:0 2px 0 10px;}
 
@@ -49,6 +49,12 @@ h3{color:#9A5E2C;padding:0; margin: 15px 0 0;}
 .line_num {}
 .hex {}
 .plain_text {}
+.filtertable{display:inline;}
+.filtertable th {font-size:10pt;}
+.filtertable td {font-size:10pt;}
+.filterselect{background:url("") no-repeat scroll 0 0 #000000; color:#FFFFFF;display:inline; width: 150px;}
+option:checked{background:url("../img/select-hover.png") repeat scroll 0 0;}
+label.filter_label{color:#fff; font-weight:400;padding: 0 0 0 5px;;}
 label.creds{color:#fff; font-weight:400;padding: 0 0 0 5px;;}
 form.formtodiv fieldset label input{padding: 2px; margin: 1px 2px 3px 5px;}
 form.formtodiv fieldset input{padding: 0; margin: 0 5px 10px;}
