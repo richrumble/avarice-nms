@@ -31,7 +31,7 @@ if (empty($form_data['action'])) {
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 	<link rel="stylesheet" href="../../../css/style.css" type="text/css" />
 	<link rel="icon" href="img/favicon.ico" type="img/x-icon" />
-	<script type = "text/javascript" src = "jquery-1.6.1.min.js"></script>
+	<script type = "text/javascript" src = "jquery-1.8.2.js"></script>
 	<script type = "text/javascript" src = "form.js"></script>
  </head>
  <body>
@@ -116,13 +116,15 @@ if (empty($form_data['action'])) {
 		$query = "CREATE TABLE Events (pkID INTEGER PRIMARY KEY, ComputerName VARCHAR (256), Message TEXT, RecordNumber INT, TimeWritten TEXT, ";
 		$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 		$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
-		foreach ($snorm as $key => $value) {
-			$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $key . " VARCHAR(128) UNIQUE)");
-			$query .= $key . "ID INT, ";
-		};
-		$query = substr($query, 0, -2) . ")";
-		#print $query;
-		$dbh->exec($query);
+		//if (!is_file('loglitedb.sqlite3')) {
+			foreach ($snorm as $key => $value) {
+				$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $key . " VARCHAR(128) UNIQUE)");
+				$query .= $key . "ID INT, ";
+			};
+			$query = substr($query, 0, -2) . ")";
+			#print $query;
+			$dbh->exec($query);
+		//};
 	} catch(PDOException $e) {
 		echo $e->getMessage();
 	};
