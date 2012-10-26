@@ -130,6 +130,7 @@ if (empty($form_data['action'])) {
 		$form_data['fqdn'] = ".";
 	};
 	$computers = explode(",", $form_data['fqdn']);
+	$logfilequery = "Select * from Win32_NTEventLogFile";
 	$query = "Select * from Win32_NTLogEvent";
 	foreach ($computers as $computer) {
 		$computer = trim($computer);
@@ -141,93 +142,100 @@ if (empty($form_data['action'])) {
 			$obj->Security_->AuthenticationLevel = 6; /* http://msdn.microsoft.com/en-us/library/windows/desktop/ms695984%28v=vs.85%29.aspx */
 			$objWMIService = $obj->ConnectServer($computer, '/root/cimv2', $form_data['user'], $form_data['pass']);
 		};
-		$colItems = $objWMIService->ExecQuery($query,'WQL',48);
-		$x = 0;
-		$total = 0;
-		$query = "BEGIN TRANSACTION; ";
-		foreach ($colItems as $objItem) {
+		$logFileDetails = $objWMIService->ExecQuery($logfilequery,'WQL',48);
+		$logfiles_array = array();
+		foreach ($logFileDetails as $logFileDetail) {
+			$logfiles_array[] = $logFileDetail->LogFileName;
+		};
+		foreach ($logfiles_array as $logfilename){
+			$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "'",'WQL',48);
+			$x = 0;
+			$total = 0;
+			$query = "BEGIN TRANSACTION; ";
+			foreach ($colItems as $objItem) {
+				foreach ($snorm as $key => $value) {
+					if ($x == 0) {
+						${"norm_query_" . $value} = "BEGIN TRANSACTION;";
+					};
+					${"norm_query_" . $value} .= "
+					INSERT OR IGNORE INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "'); ";
+					if ($x >= $batchsize) {
+						${"norm_query_" . $value} .= " COMMIT;";
+						$dbh->exec(${"norm_query_" . $value});
+						${"norm_query_" . $value} = "BEGIN TRANSACTION;";
+					};
+				};
+				$query .= "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES
+						(
+							(
+								SELECT
+									pkID
+								FROM
+									Categories
+								WHERE
+									Category = '" . $objItem->Category . "'
+							),
+							'" . $objItem->ComputerName . "',
+							(
+								SELECT
+									pkID
+								FROM
+									EventCodes
+								WHERE
+									EventCode = '" . $objItem->EventCode . "'
+							),
+							(
+								SELECT
+									pkID
+								FROM
+									Logfiles
+								WHERE
+									Logfile = '" . $objItem->LogFile . "'
+							),
+							'" . str_replace(array("'"), "", $objItem->Message) . "',
+							'" . $objItem->RecordNumber . "',
+							(
+								SELECT
+									pkID
+								FROM
+									SourceNames
+								WHERE
+									SourceName = '" . $objItem->SourceName . "'
+							),
+							'" . win_time($objItem->TimeWritten) . "',
+							(
+								SELECT
+									pkID
+								FROM
+									Types
+								WHERE
+									Type = '" . $objItem->Type . "'
+							),
+							(
+								SELECT
+									pkID
+								FROM
+									Users
+								WHERE
+									User = '" . $objItem->User . "'
+							)
+						); ";
+				if ($x < $batchsize) {
+					$x++;
+				} else {
+					$total +=$x;
+					$x = 0;
+					$dbh->exec($query . " COMMIT;");
+					$query = "
+						BEGIN TRANSACTION; ";
+				};
+	
+			};
 			foreach ($snorm as $key => $value) {
-				if ($x == 0) {
-					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
-				};
-				${"norm_query_" . $value} .= "
-				INSERT OR IGNORE INTO " . $value . " (" . $key . ") VALUES ('" . $objItem->$key . "'); ";
-				if ($x >= $batchsize) {
-					${"norm_query_" . $value} .= " COMMIT;";
-					$dbh->exec(${"norm_query_" . $value});
-					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
-				};
+				$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
 			};
-			$query .= "INSERT INTO Events (CategoryID, ComputerName, EventCodeID, LogfileID, Message, RecordNumber, SourceNameID, TimeWritten, TypeID, UserID) VALUES
-					(
-						(
-							SELECT
-								pkID
-							FROM
-								Categories
-							WHERE
-								Category = '" . $objItem->Category . "'
-						),
-						'" . $objItem->ComputerName . "',
-						(
-							SELECT
-								pkID
-							FROM
-								EventCodes
-							WHERE
-								EventCode = '" . $objItem->EventCode . "'
-						),
-						(
-							SELECT
-								pkID
-							FROM
-								Logfiles
-							WHERE
-								Logfile = '" . $objItem->LogFile . "'
-						),
-						'" . str_replace(array("'"), "", $objItem->Message) . "',
-						'" . $objItem->RecordNumber . "',
-						(
-							SELECT
-								pkID
-							FROM
-								SourceNames
-							WHERE
-								SourceName = '" . $objItem->SourceName . "'
-						),
-						'" . win_time($objItem->TimeWritten) . "',
-						(
-							SELECT
-								pkID
-							FROM
-								Types
-							WHERE
-								Type = '" . $objItem->Type . "'
-						),
-						(
-							SELECT
-								pkID
-							FROM
-								Users
-							WHERE
-								User = '" . $objItem->User . "'
-						)
-					); ";
-			if ($x < $batchsize) {
-				$x++;
-			} else {
-				$total +=$x;
-				$x = 0;
-				$dbh->exec($query . " COMMIT;");
-				$query = "
-					BEGIN TRANSACTION; ";
-			};
-
+			$dbh->exec($query . " COMMIT;");
 		};
-		foreach ($snorm as $key => $value) {
-			$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
-		};
-		$dbh->exec($query . " COMMIT;");
 	};
 ?>
 	<div id="filters">
@@ -243,11 +251,10 @@ if (empty($form_data['action'])) {
 						</tr>
 						<tr>
 							<td>
-								<select multiple=\"multiple\" name=\"filter_" . $key . "[]\" size=\"3\">
-									<option value=\"all\" selected>All</option>";
+								<select multiple=\"multiple\" name=\"filter_" . $key . "[]\" size=\"3\">";
 			foreach ($dbh->query("SELECT * FROM " . $value . " ORDER BY " . $key . " COLLATE NOCASE ASC") as $row) {
 				print "
-									<option value=\"" . $row['pkID'] . "\">" . $row[$key] . "</option>";
+									<option value=\"" . $row['pkID'] . "\" selected>" . $row[$key] . "</option>";
 			};
 			print "
 								</select>
