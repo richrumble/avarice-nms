@@ -1,27 +1,29 @@
 -- phpMyAdmin SQL Dump
--- version 3.4.5
+-- version 3.4.10.1
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Apr 13, 2012 at 04:00 AM
--- Server version: 5.5.16
--- PHP Version: 5.3.8
+-- Generation Time: Nov 02, 2012 at 02:21 AM
+-- Server version: 5.5.20
+-- PHP Version: 5.3.10
 
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET AUTOCOMMIT=0;
+START TRANSACTION;
 SET time_zone = "+00:00";
 
 --
--- Database: `avarice_nms`
+-- Database: `avarice`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `log__asset_data`
+-- Table structure for table `inv.asset`
 --
 
-CREATE TABLE IF NOT EXISTS `log__asset_data` (
-  `assetID` bigint(11) NOT NULL AUTO_INCREMENT,
+CREATE TABLE IF NOT EXISTS `inv.asset` (
+  `assetID` bigint(11) aNOT NULL AUTO_INCREMENT,
   `adminPasswordStatus` tinyint(4) NOT NULL,
   `automaticManagedPagefile` bit(1) NOT NULL,
   `automaticResetBootOption` bit(1) NOT NULL,
@@ -85,76 +87,12 @@ CREATE TABLE IF NOT EXISTS `log__asset_data` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `log__event_categories`
+-- Table structure for table `inv.localgroup`
 --
 
-CREATE TABLE IF NOT EXISTS `log__event_categories` (
-  `categoryID` bigint(20) NOT NULL AUTO_INCREMENT,
-  `category` varchar(255) NOT NULL,
-  `categoryName` varchar(255) NOT NULL,
-  PRIMARY KEY (`categoryID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `log__event_data`
---
-
-CREATE TABLE IF NOT EXISTS `log__event_data` (
-  `eventDataID` bigint(20) NOT NULL AUTO_INCREMENT,
-  `templateID` bigint(20) NOT NULL,
-  `assetID` bigint(20) NOT NULL,
-  `insertionStrings` text NOT NULL,
-  `messageData` text NOT NULL,
-  `recordNumber` bigint(20) NOT NULL,
-  `timeGenerated` datetime NOT NULL,
-  `timeWritten` datetime NOT NULL,
-  `timeZoneID` bigint(11) NOT NULL,
-  `MD5Hash` text NOT NULL,
-  `Sha1Hash` text NOT NULL,
-  `trueTime` varchar(64) NOT NULL,
-  `timeAbberation` bit(1) NOT NULL,
-  PRIMARY KEY (`eventDataID`),
-  KEY `templateID` (`templateID`),
-  KEY `assetID` (`assetID`),
-  KEY `timeZoneID` (`timeZoneID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `log__event_templates`
---
-
-CREATE TABLE IF NOT EXISTS `log__event_templates` (
-  `templateID` bigint(20) NOT NULL AUTO_INCREMENT,
-  `jenkinsHash1` bigint(20) NOT NULL,
-  `jenkinsHash2` bigint(20) NOT NULL,
-  `categoryID` bigint(20) NOT NULL,
-  `eventCode` varchar(64) NOT NULL,
-  `eventIdentifier` varchar(64) NOT NULL,
-  `eventType` varchar(32) NOT NULL,
-  `logFileID` int(11) NOT NULL,
-  `message` text NOT NULL,
-  `sourceID` int(11) NOT NULL,
-  `typeID` int(11) NOT NULL,
-  PRIMARY KEY (`templateID`),
-  KEY `categoryID` (`categoryID`),
-  KEY `logFileID` (`logFileID`),
-  KEY `sourceID` (`sourceID`),
-  KEY `typeID` (`typeID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `log__local_groups`
---
-
-CREATE TABLE IF NOT EXISTS `log__local_groups` (
+CREATE TABLE IF NOT EXISTS `inv.localgroup` (
   `groupID` bigint(20) NOT NULL AUTO_INCREMENT,
-  `assetID` int(11) NOT NULL,
+  `assetID` bigint(11) NOT NULL,
   `caption` varchar(256) NOT NULL,
   `description` text,
   `domain` varchar(64) DEFAULT NULL,
@@ -170,12 +108,12 @@ CREATE TABLE IF NOT EXISTS `log__local_groups` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `log__local_users`
+-- Table structure for table `inv.localuser`
 --
 
-CREATE TABLE IF NOT EXISTS `log__local_users` (
+CREATE TABLE IF NOT EXISTS `inv.localuser` (
   `userID` bigint(20) NOT NULL AUTO_INCREMENT,
-  `assetID` int(11) NOT NULL,
+  `assetID` bigint(11) NOT NULL,
   `accountType` varchar(64) NOT NULL,
   `caption` varchar(256) NOT NULL,
   `description` text,
@@ -198,34 +136,10 @@ CREATE TABLE IF NOT EXISTS `log__local_users` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `log__logfiles`
+-- Table structure for table `inv.timezone`
 --
 
-CREATE TABLE IF NOT EXISTS `log__logfiles` (
-  `logFileID` int(11) NOT NULL AUTO_INCREMENT,
-  `logFile` varchar(255) NOT NULL,
-  PRIMARY KEY (`logFileID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `log__sources`
---
-
-CREATE TABLE IF NOT EXISTS `log__sources` (
-  `sourceID` int(11) NOT NULL AUTO_INCREMENT,
-  `source` varchar(255) NOT NULL,
-  PRIMARY KEY (`sourceID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `log__time_zones`
---
-
-CREATE TABLE IF NOT EXISTS `log__time_zones` (
+CREATE TABLE IF NOT EXISTS `inv.timezone` (
   `timeZoneID` bigint(11) NOT NULL AUTO_INCREMENT,
   `bias` smallint(6) NOT NULL,
   `caption` varchar(64) NOT NULL,
@@ -248,17 +162,125 @@ CREATE TABLE IF NOT EXISTS `log__time_zones` (
   `standardMonth` tinyint(4) NOT NULL,
   `standardName` varchar(128) NOT NULL,
   `standardSecond` tinyint(4) NOT NULL,
-  `standardYear` smallint(6) NOT NULL,
   PRIMARY KEY (`timeZoneID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `log__types`
+-- Table structure for table `log.category`
 --
 
-CREATE TABLE IF NOT EXISTS `log__types` (
+CREATE TABLE IF NOT EXISTS `log.category` (
+  `categoryID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `category` varchar(255) NOT NULL,
+  `categoryName` varchar(255) NOT NULL,
+  PRIMARY KEY (`categoryID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log.data`
+--
+
+CREATE TABLE IF NOT EXISTS `log.data` (
+  `eventDataID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `templateID` bigint(20) NOT NULL,
+  `assetID` bigint(20) NOT NULL,
+  `insertionStrings` text NOT NULL,
+  `recordNumber` bigint(20) NOT NULL,
+  `timeGenerated` datetime NOT NULL,
+  `timeWritten` datetime NOT NULL,
+  `MD5Hash` varchar(32) NOT NULL,
+  `Sha1Hash` varchar(40) NOT NULL,
+  PRIMARY KEY (`eventDataID`),
+  KEY `templateID` (`templateID`),
+  KEY `assetID` (`assetID`),
+  KEY `MD5Hash` (`MD5Hash`),
+  KEY `Sha1Hash` (`Sha1Hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log.logfile`
+--
+
+CREATE TABLE IF NOT EXISTS `log.logfile` (
+  `logFileID` int(11) NOT NULL AUTO_INCREMENT,
+  `logFile` varchar(255) NOT NULL,
+  PRIMARY KEY (`logFileID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log.msgfile`
+--
+
+CREATE TABLE IF NOT EXISTS `log.msgfile` (
+  `msgFileID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `company` varchar(128) NOT NULL,
+  `fileVersion` varchar(24) NOT NULL,
+  `internalName` varchar(128) NOT NULL,
+  `language` varchar(64) NOT NULL,
+  `originalFileName` varchar(128) NOT NULL,
+  `productName` text NOT NULL,
+  `productVersion` varchar(24) NOT NULL,
+  `description` text,
+  `copyright` varchar(32) DEFAULT NULL,
+  PRIMARY KEY (`msgFileID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log.source`
+--
+
+CREATE TABLE IF NOT EXISTS `log.source` (
+  `sourceID` int(11) NOT NULL AUTO_INCREMENT,
+  `source` varchar(255) NOT NULL,
+  PRIMARY KEY (`sourceID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log.template`
+--
+
+CREATE TABLE IF NOT EXISTS `log.template` (
+  `templateID` bigint(20) NOT NULL AUTO_INCREMENT,
+  `jenkinsHash1` varchar(8) NOT NULL,
+  `jenkinsHash2` varchar(8) NOT NULL,
+  `categoryID` bigint(20) NOT NULL,
+  `eventCode` varchar(64) NOT NULL,
+  `eventIdentifier` varchar(64) NOT NULL,
+  `eventType` varchar(32) NOT NULL,
+  `logFileID` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `sourceID` int(11) NOT NULL,
+  `typeID` int(11) NOT NULL,
+  `msgFileID` bigint(20) NOT NULL,
+  PRIMARY KEY (`templateID`),
+  KEY `categoryID` (`categoryID`),
+  KEY `logFileID` (`logFileID`),
+  KEY `sourceID` (`sourceID`),
+  KEY `typeID` (`typeID`),
+  KEY `msgFileID` (`msgFileID`),
+  KEY `jenkinsHash1` (`jenkinsHash1`),
+  KEY `jenkinsHash2` (`jenkinsHash2`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `log.type`
+--
+
+CREATE TABLE IF NOT EXISTS `log.type` (
   `typeID` int(11) NOT NULL AUTO_INCREMENT,
   `type` varchar(255) NOT NULL,
   PRIMARY KEY (`typeID`)
@@ -269,19 +291,31 @@ CREATE TABLE IF NOT EXISTS `log__types` (
 --
 
 --
--- Constraints for table `log__event_data`
+-- Constraints for table `inv.localgroup`
 --
-ALTER TABLE `log__event_data`
-  ADD CONSTRAINT `log__event_data_ibfk_2` FOREIGN KEY (`templateID`) REFERENCES `log__event_templates` (`templateID`),
-  ADD CONSTRAINT `log__event_data_ibfk_3` FOREIGN KEY (`assetID`) REFERENCES `log__asset_data` (`assetID`),
-  ADD CONSTRAINT `log__event_data_ibfk_4` FOREIGN KEY (`timeZoneID`) REFERENCES `log__time_zones` (`timeZoneID`);
+ALTER TABLE `inv.localgroup`
+  ADD CONSTRAINT `inv@002elocalgroup_ibfk_1` FOREIGN KEY (`assetID`) REFERENCES `inv.asset` (`assetID`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
--- Constraints for table `log__event_templates`
+-- Constraints for table `inv.localuser`
 --
-ALTER TABLE `log__event_templates`
-  ADD CONSTRAINT `log__event_templates_ibfk_2` FOREIGN KEY (`categoryID`) REFERENCES `log__event_categories` (`categoryID`),
-  ADD CONSTRAINT `log__event_templates_ibfk_3` FOREIGN KEY (`logFileID`) REFERENCES `log__logfiles` (`logFileID`),
-  ADD CONSTRAINT `log__event_templates_ibfk_4` FOREIGN KEY (`sourceID`) REFERENCES `log__sources` (`sourceID`),
-  ADD CONSTRAINT `log__event_templates_ibfk_5` FOREIGN KEY (`typeID`) REFERENCES `log__types` (`typeID`);
+ALTER TABLE `inv.localuser`
+  ADD CONSTRAINT `inv@002elocaluser_ibfk_1` FOREIGN KEY (`assetID`) REFERENCES `inv.asset` (`assetID`) ON DELETE CASCADE;
 
+--
+-- Constraints for table `log.data`
+--
+ALTER TABLE `log.data`
+  ADD CONSTRAINT `log.data_ibfk_2` FOREIGN KEY (`templateID`) REFERENCES `log.template` (`templateID`),
+  ADD CONSTRAINT `log.data_ibfk_3` FOREIGN KEY (`assetID`) REFERENCES `inv.asset` (`assetID`);
+
+--
+-- Constraints for table `log.template`
+--
+ALTER TABLE `log.template`
+  ADD CONSTRAINT `log@002etemplate_ibfk_1` FOREIGN KEY (`msgFileID`) REFERENCES `log.msgfile` (`msgFileID`),
+  ADD CONSTRAINT `log.template_ibfk_2` FOREIGN KEY (`categoryID`) REFERENCES `log.category` (`categoryID`),
+  ADD CONSTRAINT `log.template_ibfk_3` FOREIGN KEY (`logFileID`) REFERENCES `log.logfile` (`logFileID`),
+  ADD CONSTRAINT `log.template_ibfk_4` FOREIGN KEY (`sourceID`) REFERENCES `log.source` (`sourceID`),
+  ADD CONSTRAINT `log.template_ibfk_5` FOREIGN KEY (`typeID`) REFERENCES `log.type` (`typeID`);
+COMMIT;
