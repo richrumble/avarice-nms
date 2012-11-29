@@ -1,18 +1,19 @@
 <?PHP
+header("Content-Type: text/plain");
 $objFSO = new COM("Scripting.FileSystemObject");
-$objFolder = $objFSO->GetFolder("C:\\\\windows\\");
-Echo "Date created: " . $objFolder->DateCreated . "<br />";
-Echo "Date last accessed: " . $objFolder->DateLastAccessed . "<br />";
-Echo "Date last modified: " . $objFolder->DateLastModified . "<br />";
-Echo "Drive: " . $objFolder->Drive . "<br />";
-Echo "Is root folder: " . $objFolder->IsRootFolder . "<br />";
-Echo "Name: " . $objFolder->Name . "<br />";
-Echo "Parent folder: " . $objFolder->ParentFolder . "<br />";
-Echo "Path: " . $objFolder->Path . "<br />";
-Echo "Short name: " . $objFolder->ShortName . "<br />";
-Echo "Short path: " . $objFolder->ShortPath . "<br />";
-Echo "Size: " . $objFolder->Size . "<br />";
-Echo "Type: " . $objFolder->Type . "<br />";
-
+$objFolder = $objFSO->GetFolder("C:\\\\Documents and Settings\\");
+Echo "Date created: " . $objFolder->DateCreated . "\r\n";
+Echo "Date last accessed: " . $objFolder->DateLastAccessed . "\r\n";
+Echo "Date last modified: " . $objFolder->DateLastModified . "\r\n";
+Echo "Drive: " . $objFolder->Drive . "\r\n";
+Echo "Is root folder: " . $objFolder->IsRootFolder . "\r\n";
+Echo "Name: " . $objFolder->Name . "\r\n";
+Echo "Parent folder: " . $objFolder->ParentFolder . "\r\n";
+Echo "Path: " . $objFolder->Path . "\r\n";
+Echo "Short name: " . $objFolder->ShortName . "\r\n";
+Echo "Short path: " . $objFolder->ShortPath . "\r\n";
+Echo "Size: " . $objFolder->Size . "\r\n";
+Echo "Type: " . $objFolder->Type . "\r\n";
+Echo "=======================";
 
 ?>
