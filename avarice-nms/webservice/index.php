@@ -43,7 +43,33 @@ function requiredParams ($array)
 			$return['missingParams'][] = $requiredParam;
 		}
 	}
-	return $return;
+	if ($return['paramsPassed'] == TRUE)
+	{
+		return TRUE;
+	}
+	else
+	{
+		wsResponse($req['format'], "Error", $return);
+		exit;
+	}
+}
+
+# output depending on format requested
+function wsResponse ($format, $status, $return)
+{
+	$response = array
+	(
+		"status"   => $status,
+		"response" => $return
+	);
+	if (strtolower($format) == 'json')
+	{
+		print json_encode($response);
+	}
+	else if (strtolower($format) == 'xml')
+	{
+		print array_to_xml($response, new SimpleXMLElement('<root />'))->asXML();
+	}
 }
 
 # defaults to error
@@ -51,12 +77,10 @@ if (!isset($req['action']))
 {
 	$return = array
 	(
-		"response" => array
-		(
-			"fault"       => "input error",
-			"description" => "no action provided"
-		)
+		"fault"       => "input error",
+		"description" => "no action provided"
 	);
+	wsResponse($req['format'], "Error", $return);
 }
 # used to queue data file for consumption
 else if ($req['action'] == 'fileQueue')
@@ -81,27 +105,14 @@ else if ($req['action'] == 'fileQueue')
 		$insertedID = $dbh->lastInsertID();
 		$return = array
 		(
-			"response" => array
-			(
-				"status" => "success",
-				"action" => $req['action'],
-				"dataType" => $req['dataType'],
-				"assetID" => $req['assetID'],
-				"fileName" => $req['fileName'],
-				"queueID" => $insertedID
-			)
+			"action" => $req['action'],
+			"dataType" => $req['dataType'],
+			"assetID" => $req['assetID'],
+			"fileName" => $req['fileName'],
+			"queueID" => $insertedID
 		);
+		wsResponse($req['format'], "Success", $return);
 	}
-}
-
-# output depending on format requested
-if (strtolower($req['format']) == 'json')
-{
-	print json_encode($return);
-}
-else if (strtolower($req['format']) == 'xml')
-{
-	print array_to_xml($return, new SimpleXMLElement('<root />'))->asXML();
 }
 
 ?>
