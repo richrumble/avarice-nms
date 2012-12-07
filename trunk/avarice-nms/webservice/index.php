@@ -26,6 +26,26 @@ function array_to_xml(array $arr, SimpleXMLElement $xml)
     return $xml;
 }
 
+# function to verify required parameters are passed
+function requiredParams ($array)
+{
+	global $req;
+	$return = array
+	(
+		"paramsPassed"  => TRUE,
+		"missingParams" => array()
+	);
+	foreach ($array as $requiredParam)
+	{
+		if (!isset($req[$requiredParam]))
+		{
+			$return['paramsPassed']    = FALSE;
+			$return['missingParams'][] = $requiredParam;
+		}
+	}
+	return $return;
+}
+
 # defaults to error
 if (!isset($req['action']))
 {
@@ -38,13 +58,39 @@ if (!isset($req['action']))
 		)
 	);
 }
-# used to push data to avarice DB
-else if ($req['action'] == 'dataPush')
+# used to queue data file for consumption
+else if ($req['action'] == 'fileQueue')
 {
 	# data being pushed is Windows Event Logs
 	if ($req['dataType'] == 'winEventLogs')
 	{
-		
+		$requiredParamsPresent = requiredParams(array("assetID", "fileName"));
+		$query = "
+			INSERT INTO `queue.windowsevent`
+				(assetID, fileName, createdDate)
+			VALUES
+				(:assetID, :fileName, NOW())";
+		$sqlParams = array
+		(
+			':assetID'  => $req['assetID'],
+			':fileName' => $req['fileName']
+		);
+		$dbh = avariceDBConnect();
+		$sth = $dbh->prepare($query, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+		$sth->execute($sqlParams);
+		$insertedID = $dbh->lastInsertID();
+		$return = array
+		(
+			"response" => array
+			(
+				"status" => "success",
+				"action" => $req['action'],
+				"dataType" => $req['dataType'],
+				"assetID" => $req['assetID'],
+				"fileName" => $req['fileName'],
+				"queueID" => $insertedID
+			)
+		);
 	}
 }
 

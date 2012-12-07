@@ -1,17 +1,22 @@
 <?php
 
 #connect to avarice db
-function avariceDBConnect () {
+function avariceDBConnect ()
+{
 	$dsn = 'mysql:dbname=avarice;host=127.0.0.1';
 	$user = 'av-webservice';
 	$pass = 'vsmR37Yd8ULPAKQM';
 
-	try {
+	try
+	{
 		$dbh = new PDO($dsn, $user, $pass);
-	} catch(PDOException $e) {
+	}
+	catch(PDOException $e)
+	{
 		print $e->getMessage();
 		exit;
 	};
+	$dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	return $dbh;
 };
 
