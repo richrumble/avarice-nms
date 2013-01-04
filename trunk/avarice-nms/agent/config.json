@@ -9,16 +9,20 @@
 		"Description": "How to connect to Avarice WebService",
 		"URI":         "localhost/avarice-nms/webservice/"
 	},
-	"eventLog":
-	{
-		"Description":      "Location to place eventLog extracts",
-		"path":             "C:/wamp/www/avarice-nms/agent/eventlogs",
-		"intervalMinutes":  1,
-		"retentionMinutes": 2880
-	},
 	"publicKey":
 	{
 		"Description": "given by central Avarice server",
 		"Key":         ""
+	},
+	"module":
+	{
+		"eventLog":
+		{
+			"Description":      "Location to place eventLog extracts",
+			"path":             "C:/wamp/www/avarice-nms/agent/eventlogs",
+			"disabled":			0,
+			"intervalMinutes":  1,
+			"retentionMinutes": 2880
+		}
 	}
 }
