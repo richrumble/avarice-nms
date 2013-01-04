@@ -1,5 +1,35 @@
 <?php
 
+// Determines if this is the first run and creates tables if it is
+$query = "
+	SELECT
+		COUNT(*) as 'Count'
+	FROM agent_module
+	WHERE
+		moduleName = 'eventLog';";
+$result = $avarice_dbh->query($query)->fetch();
+$firstRun = $result['Count'];
+
+if ($firstRun == 0)
+{
+	$query = "
+		CREATE TABLE eventLog_logFiles
+		(
+			createdDate TEXT,
+			modifiedDate TEXT,
+			logFile TEXT UNIQUE,
+			lastEventID TEXT
+		)
+		CREATE TABLE eventLog_runLog
+		(
+			startTime TEXT,
+			endTime TEXT,
+			status TEXT,
+			eventLogs TEXT,
+			eventCount INT
+		);
+}
+
 $snorm = array(
 	"Template"        => "Templates",
 	"InsertionString" => "InsertionStrings",
