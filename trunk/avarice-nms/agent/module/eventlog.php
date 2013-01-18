@@ -1,5 +1,10 @@
 <?php
 
+function win_time($timestr) {
+	return substr($timestr, 0, 4) . "-" . substr($timestr, 4, 2) . "-" . substr($timestr, 6, 2) . " " . substr($timestr, 8, 2) . ":" . substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2);
+};
+$runTimeEvent = date('U');
+$batchsize = 1000;
 // Determines if this is the first run and creates tables if it is
 $query = "
 	SELECT
@@ -9,7 +14,6 @@ $query = "
 		moduleName = 'eventLog';";
 $result = $avarice_dbh->query($query)->fetch();
 $firstRun = $result['Count'];
-
 if ($firstRun == 0)
 {
 	$query = "
@@ -18,8 +22,8 @@ if ($firstRun == 0)
 			createdDate TEXT,
 			modifiedDate TEXT,
 			logFile TEXT UNIQUE,
-			lastEventID TEXT
-		)
+			lastEventID NUMERIC
+		);
 		CREATE TABLE eventLog_runLog
 		(
 			startTime TEXT,
@@ -27,28 +31,29 @@ if ($firstRun == 0)
 			status TEXT,
 			eventLogs TEXT,
 			eventCount INT
-		);
+		);";
+	$avarice_dbh->exec($query);
 }
 
 $snorm = array(
-	"Template"        => "Templates",
-	"InsertionString" => "InsertionStrings",
-	"Category"        => "Categories",
-	"EventCode"       => "EventCodes",
-	"LogFile"         => "Logfiles",
-	"SourceName"      => "SourceNames",
-	"Type"            => "Types",
-	"User"            => "Users"
+	"Template",
+	"InsertionStrings",
+	"Category",
+	"EventCode",
+	"LogFile",
+	"SourceName",
+	"Type",
+	"User"
 );
 
 // Create sqlite DB for current dump
-try {$dbh = new PDO("sqlite:" . $config['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3");
-	$query = "CREATE TABLE Events (pkID INTEGER PRIMARY KEY, ComputerName TEXT, Message TEXT, RecordNumber NUMERIC, TimeWritten TEXT, ";
+try {$dbh = new PDO("sqlite:" . $config['module']['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3");
+	$query = "CREATE TABLE events (pkID INTEGER PRIMARY KEY, ComputerName TEXT, RecordNumber NUMERIC, TimeWritten TEXT, ";
 	$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
 	$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
-	foreach ($snorm as $key => $value) {
-		$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $key . " TEXT UNIQUE)");
-		$query .= $key . "ID INT, ";
+	foreach ($snorm as $value) {
+		$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $value . " TEXT UNIQUE)");
+		$query .= $value . "ID INT, ";
 	};
 	$query = substr($query, 0, -2) . ")";
 	$dbh->exec($query);
@@ -64,9 +69,141 @@ $logFileDetails = $objWMIService->ExecQuery("Select * from Win32_NTEventLogFile"
 $logfiles_array = array();
 foreach ($logFileDetails as $logFileDetail) {
 	$logfiles_array[] = $logFileDetail->LogFileName;
-};
+}
+
+$total = 0;
 
 foreach ($logfiles_array as $logfilename){
-	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND TimeWritten >= ",'WQL',48);
+	$x = 0;
+	$query = "
+		SELECT
+			*
+		FROM eventLog_logFiles
+		WHERE
+			logFile = '" . $logfilename . "';";
+	try{$result = $avarice_dbh->query($query)->fetch();
+	} catch(PDOException $e) {
+		print $e->getMessage();
+	};
+	if (empty($result['lastEventID'])) {
+		$result['lastEventID'] = 0;
+	}
+	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'],'WQL',48);
+	$emptyvariant = new VARIANT(null);
+	if ($colItems == $emptyvariant) {
+		$query = "BEGIN TRANSACTION; ";
+		foreach ($colItems as $objItem) {
+			foreach ($snorm as $value) {
+				if ($x == 0) {
+					${"norm_query_" . $value} = "BEGIN TRANSACTION; ";
+				}
+				if (!in_array($value, array("InsertionStrings", "Template"))) {
+					${"norm_query_" . $value} .= "
+					INSERT OR IGNORE INTO " . $value . " (" . $value . ") VALUES ('" . $objItem->$value . "'); ";
+				} else if ($value == "InsertionStrings") {
+					${"norm_query_" . $value} .= "
+					INSERT OR IGNORE INTO " . $value . " (" . str_replace("'", "''", $value) . ") VALUES ('";
+					$insertionStrings = array();
+					if ($objItem->$value != NULL) {
+						foreach ($objItem->$value as $oiv) {
+							$insertionStrings[] = $oiv;
+						}
+					}
+					${"norm_query_" . $value} .= str_replace("'", "''", implode(",", $insertionStrings)) . "'); ";
+				} else if ($value == "Template") {
+					$template = $objItem->Message;
+					$y = 0;
+					if ($objItem->InsertionStrings != NULL) {
+						foreach ($objItem->InsertionStrings as $is) {
+							$template = str_replace($is, '%|%' . $y . '%|%', $template);
+							$y++;
+						}
+					}
+					${"norm_query_" . $value} .= "
+					INSERT OR IGNORE INTO " . $value . " (" . $value . ") VALUES ('" . str_replace("'", "''", $template) . "'); ";
+				}
+				if ($x >= $batchsize) {
+					${"norm_query_" . $value} .= " COMMIT;";
+					$dbh->exec(${"norm_query_" . $value});
+					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
+				}
+			}
+			$query .= "INSERT INTO Events (ComputerName, RecordNumber, TimeWritten, TemplateID, InsertionStringsID, CategoryID, EventCodeID, LogFileID, SourceNameID, TypeID, UserID) VALUES
+					(
+						'" . $objItem->ComputerName . "',
+						'" . $objItem->RecordNumber . "',
+						'" . win_time($objItem->TimeWritten) . "',";
+			foreach ($snorm as $value) {
+				$query .= "
+						(
+							SELECT
+								pkID
+							FROM
+								" . $value . "
+							WHERE
+								" . $value . " = '";
+				if (!in_array($value, array("InsertionStrings", "Template"))) {
+					$query .= str_replace("'", "''", $objItem->$value);
+				} else if ($value == "InsertionStrings") {
+					$query .= str_replace("'", "''", implode(",", $insertionStrings));
+				} else if ($value == "Template") {
+					$query .= str_replace("'", "''", $template);
+				}
+				$query .= "'
+						),";
+			};
+			$query = substr($query, 0, -1) . "
+					); ";
+			if ($x < $batchsize) {
+				$x++;
+			} else {
+				$total += $x;
+				$x = 0;
+				//print $query . " COMMIT;\n\n";
+				$dbh->exec($query . " COMMIT;");
+				$query = "
+					BEGIN TRANSACTION; ";
+			};
+		};
+		foreach ($snorm as $key => $value) {
+			$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
+		};
+		$dbh->exec($query . " COMMIT;");
+		$total += $x;
+		$query = "
+			SELECT
+				MAX(RecordNumber) AS 'RecordNumber'
+			FROM Events
+			WHERE
+				LogFileID = (
+					SELECT
+						pkID
+					FROM LogFile
+					WHERE
+						LogFile = '" . $logfilename . "'
+				);";
+		$result = $dbh->query($query)->fetch();
+		$query = "
+			INSERT OR IGNORE INTO eventLog_logFiles
+				(createdDate, logFile)
+			VALUES
+				('" . date('Y-m-d H:i:s', $runTimeEpoch) . "', '" . $logfilename . "');
+			UPDATE eventLog_logFiles
+			SET
+				modifiedDate = '" . date('Y-m-d H:i:s', $runTimeEvent) . "',
+				lastEventID = " . $result['RecordNumber'] . "
+			WHERE
+				logFile = '" . $logfilename . "';
+		";
+		$avarice_dbh->exec($query);
+	};
+};
+
+$query = "
+	INSERT INTO eventLog_runLog
+		(startTime, endTime, status, eventLogs, eventCount)
+	VALUES
+		('" . date('Y-m-d H:i:s', $runTimeEvent) . "', '" . date('Y-m-d H:i:s') . "', 'success', '" . implode(",", $logfiles_array) . "', " . $total . ");";
+$avarice_dbh->exec($query);
 
 ?>
