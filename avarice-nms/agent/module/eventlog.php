@@ -46,21 +46,6 @@ $snorm = array(
 	"User"
 );
 
-// Create sqlite DB for current dump
-try {$dbh = new PDO("sqlite:" . $config['module']['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3");
-	$query = "CREATE TABLE events (pkID INTEGER PRIMARY KEY, ComputerName TEXT, RecordNumber NUMERIC, TimeWritten TEXT, ";
-	$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
-	$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
-	foreach ($snorm as $value) {
-		$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $value . " TEXT UNIQUE)");
-		$query .= $value . "ID INT, ";
-	};
-	$query = substr($query, 0, -2) . ")";
-	$dbh->exec($query);
-} catch(PDOException $e) {
-	echo $e->getMessage();
-};
-
 // Make WMI connection
 $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy,(Security)}!//.\\root\\cimv2");
 
@@ -72,6 +57,8 @@ foreach ($logFileDetails as $logFileDetail) {
 }
 
 $total = 0;
+
+$emptyvariant = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE RecordNumber = 'string'",'WQL',48);
 
 foreach ($logfiles_array as $logfilename){
 	$x = 0;
@@ -89,8 +76,23 @@ foreach ($logfiles_array as $logfilename){
 		$result['lastEventID'] = 0;
 	}
 	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'],'WQL',48);
-	$emptyvariant = new VARIANT(null);
-	if ($colItems == $emptyvariant) {
+	if ($colItems != $emptyvariant) {
+		// Create sqlite DB for current dump
+		if (!is_file($config['module']['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3")) {
+			try {$dbh = new PDO("sqlite:" . $config['module']['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3");
+				$query = "CREATE TABLE events (pkID INTEGER PRIMARY KEY, ComputerName TEXT, RecordNumber NUMERIC, TimeWritten TEXT, ";
+				$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+				$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
+				foreach ($snorm as $value) {
+					$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $value . " TEXT UNIQUE)");
+					$query .= $value . "ID INT, ";
+				};
+				$query = substr($query, 0, -2) . ")";
+				$dbh->exec($query);
+			} catch(PDOException $e) {
+				echo $e->getMessage();
+			};
+		};
 		$query = "BEGIN TRANSACTION; ";
 		foreach ($colItems as $objItem) {
 			foreach ($snorm as $value) {
@@ -166,7 +168,9 @@ foreach ($logfiles_array as $logfilename){
 			};
 		};
 		foreach ($snorm as $key => $value) {
-			$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
+			if (!empty(${"norm_query_" . $value})) {
+				$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
+			};
 		};
 		$dbh->exec($query . " COMMIT;");
 		$total += $x;
