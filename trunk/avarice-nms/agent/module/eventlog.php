@@ -114,10 +114,11 @@ foreach ($logfiles_array as $logfilename){
 					${"norm_query_" . $value} .= str_replace("'", "''", implode(",", $insertionStrings)) . "'); ";
 				} else if ($value == "Template") {
 					$template = $objItem->Message;
+					$template = str_replace(array("%", "\r", "\n", "\t"), array("%%", "%r", "%n", "%t"), $template);
 					$y = 0;
 					if ($objItem->InsertionStrings != NULL) {
 						foreach ($objItem->InsertionStrings as $is) {
-							$template = str_replace($is, '%|%' . $y . '%|%', $template);
+							$template = str_replace($is, '%' . $y, $template);
 							$y++;
 						}
 					}
