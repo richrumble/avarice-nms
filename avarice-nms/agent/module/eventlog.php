@@ -117,7 +117,8 @@ foreach ($logfiles_array as $logfilename)
 	{
 		$result['lastEventID'] = 0;
 	}
-	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'],'WQL',48);
+	$largestEvent = $result['lastEventID'] + 1000000;
+	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'] . " AND RecordNumber < " . $largestEvent,'WQL',48);
 	if ($colItems != $emptyvariant)
 	{
 		$query = "BEGIN TRANSACTION; ";
@@ -239,6 +240,10 @@ foreach ($logfiles_array as $logfilename)
 						LogFile = '" . $logfilename . "'
 				);";
 		$result = $dbh->query($query)->fetch();
+		if ($result['RecordNumber'] == 4294967295)
+		{
+			$result['RecordNumber'] = 0;
+		};
 		$query = "
 			INSERT OR IGNORE INTO eventLog_logFiles
 				(createdDate, logFile)
