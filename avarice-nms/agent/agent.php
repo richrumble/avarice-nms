@@ -64,7 +64,7 @@ foreach ($avarice_dbh->query($query) as $row)
 {
 	$modulesInstalled[$row['moduleName']] = $row['lastRan'];
 }
-		
+
 // Determines which modules to run based on the interval defined in the config
 $runModules = array();
 foreach ($config['module'] as $key => $value)
@@ -74,7 +74,7 @@ foreach ($config['module'] as $key => $value)
 		if (in_array($key, array_keys($modulesInstalled)))
 		{
 			$minutes =  floor(($runTimeEpoch - date('U', strtotime($modulesInstalled[$key]))) / 60);
-			if ($minutes >= $value)
+			if ($minutes >= $value['intervalMinutes'])
 			{
 				$runModules[] = $key;
 			}

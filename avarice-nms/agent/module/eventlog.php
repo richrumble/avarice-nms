@@ -1,4 +1,5 @@
 <?php
+$eversion = "0.0.1";
 
 function win_time($timestr)
 {
@@ -262,12 +263,13 @@ $query = "
 $dbh->exec($query);
 $query = "
 	INSERT OR IGNORE INTO agent_module
-		(moduleName)
+		(moduleName, version, installDate)
 	VALUES
-		('eventLog');
+		('eventLog', '" . $eversion . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');
 	UPDATE agent_module
 	SET
-		lastRan = '" . date('Y-m-d H:i:s', $runTimeEvent) . "'
+		lastRan = '" . date('Y-m-d H:i:s', $runTimeEvent) . "',
+		version = '" . $eversion . "'
 	WHERE
 		moduleName = 'eventLog';";
 $avarice_dbh->exec($query);
