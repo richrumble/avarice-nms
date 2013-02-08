@@ -1,19 +1,45 @@
 <?php
 
-function win_time($timestr) {
+function win_time($timestr)
+{
 	return substr($timestr, 0, 4) . "-" . substr($timestr, 4, 2) . "-" . substr($timestr, 6, 2) . " " . substr($timestr, 8, 2) . ":" . substr($timestr, 10, 2) . ":" . substr($timestr, 12, 2);
-};
+}
 $runTimeEvent = date('U');
 $batchsize = 1000;
+
+$snorm = array
+(
+	"Template",
+	"InsertionStrings",
+	"Category",
+	"EventCode",
+	"LogFile",
+	"SourceName",
+	"Type",
+	"User"
+);
+
 // Determines if this is the first run and creates tables if it is
+try
+{
+	$dbh = new PDO("sqlite:" . $config['module']['eventLog']['path'] . "/eventLog.sqlite3");
+	$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+	$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
+}
+catch(PDOException $e)
+{
+	echo $e->getMessage();
+};
+
 $query = "
 	SELECT
 		COUNT(*) as 'Count'
 	FROM agent_module
 	WHERE
 		moduleName = 'eventLog';";
-$result = $avarice_dbh->query($query)->fetch();
+$result   = $avarice_dbh->query($query)->fetch();
 $firstRun = $result['Count'];
+
 if ($firstRun == 0)
 {
 	$query = "
@@ -31,20 +57,28 @@ if ($firstRun == 0)
 			status TEXT,
 			eventLogs TEXT,
 			eventCount INT
-		);";
-	$avarice_dbh->exec($query);
+		);
+		CREATE TABLE eventLog_upload
+		(
+			startTime TEXT,
+			endTime TEXT,
+			lastEventID INTEGER
+		);
+		CREATE TABLE events
+		(
+			pkID INTEGER PRIMARY KEY,
+			ComputerName TEXT,
+			RecordNumber NUMERIC,
+			TimeWritten TEXT,";
+	foreach ($snorm as $value)
+	{
+		$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $value . " TEXT UNIQUE)");
+		$query .= "
+			" . 	$value . "ID INT,";
+	}
+	$query = substr($query, 0, -1) . ");";
+	$dbh->exec($query);
 }
-
-$snorm = array(
-	"Template",
-	"InsertionStrings",
-	"Category",
-	"EventCode",
-	"LogFile",
-	"SourceName",
-	"Type",
-	"User"
-);
 
 // Make WMI connection
 $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy,(Security)}!//.\\root\\cimv2");
@@ -52,7 +86,8 @@ $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticatio
 // Gather list of EventLog Files
 $logFileDetails = $objWMIService->ExecQuery("Select * from Win32_NTEventLogFile",'WQL',48);
 $logfiles_array = array();
-foreach ($logFileDetails as $logFileDetail) {
+foreach ($logFileDetails as $logFileDetail)
+{
 	$logfiles_array[] = $logFileDetail->LogFileName;
 }
 
@@ -60,7 +95,8 @@ $total = 0;
 
 $emptyvariant = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE RecordNumber = 'string'",'WQL',48);
 
-foreach ($logfiles_array as $logfilename){
+foreach ($logfiles_array as $logfilename)
+{
 	$x = 0;
 	$query = "
 		SELECT
@@ -68,56 +104,58 @@ foreach ($logfiles_array as $logfilename){
 		FROM eventLog_logFiles
 		WHERE
 			logFile = '" . $logfilename . "';";
-	try{$result = $avarice_dbh->query($query)->fetch();
-	} catch(PDOException $e) {
+	try
+	{
+		$result = $dbh->query($query)->fetch();
+	}
+	catch(PDOException $e)
+	{
 		print $e->getMessage();
 	};
-	if (empty($result['lastEventID'])) {
+	if (empty($result['lastEventID']))
+	{
 		$result['lastEventID'] = 0;
 	}
 	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'],'WQL',48);
-	if ($colItems != $emptyvariant) {
-		// Create sqlite DB for current dump
-		if (!is_file($config['module']['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3")) {
-			try {$dbh = new PDO("sqlite:" . $config['module']['eventLog']['path'] . "/eventLog." . date('Ymd.Hi', $runTimeEpoch) . ".sqlite3");
-				$query = "CREATE TABLE events (pkID INTEGER PRIMARY KEY, ComputerName TEXT, RecordNumber NUMERIC, TimeWritten TEXT, ";
-				$dbh->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
-				$dbh->exec("PRAGMA journal_mode = MEMORY; PRAGMA temp_store = MEMORY; PRAGMA synchronous = OFF");
-				foreach ($snorm as $value) {
-					$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $value . " TEXT UNIQUE)");
-					$query .= $value . "ID INT, ";
-				};
-				$query = substr($query, 0, -2) . ")";
-				$dbh->exec($query);
-			} catch(PDOException $e) {
-				echo $e->getMessage();
-			};
-		};
+	if ($colItems != $emptyvariant)
+	{
 		$query = "BEGIN TRANSACTION; ";
-		foreach ($colItems as $objItem) {
-			foreach ($snorm as $value) {
-				if ($x == 0) {
+		foreach ($colItems as $objItem)
+		{
+			foreach ($snorm as $value)
+			{
+				if ($x == 0)
+				{
 					${"norm_query_" . $value} = "BEGIN TRANSACTION; ";
 				}
-				if (!in_array($value, array("InsertionStrings", "Template"))) {
+				if (!in_array($value, array("InsertionStrings", "Template")))
+				{
 					${"norm_query_" . $value} .= "
 					INSERT OR IGNORE INTO " . $value . " (" . $value . ") VALUES ('" . $objItem->$value . "'); ";
-				} else if ($value == "InsertionStrings") {
+				}
+				else if ($value == "InsertionStrings")
+				{
 					${"norm_query_" . $value} .= "
 					INSERT OR IGNORE INTO " . $value . " (" . str_replace("'", "''", $value) . ") VALUES ('";
 					$insertionStrings = array();
-					if ($objItem->$value != NULL) {
-						foreach ($objItem->$value as $oiv) {
+					if ($objItem->$value != NULL)
+					{
+						foreach ($objItem->$value as $oiv)
+						{
 							$insertionStrings[] = $oiv;
 						}
 					}
 					${"norm_query_" . $value} .= str_replace("'", "''", implode(",", $insertionStrings)) . "'); ";
-				} else if ($value == "Template") {
+				}
+				else if ($value == "Template")
+				{
 					$template = $objItem->Message;
 					$template = str_replace(array("%", "\r", "\n", "\t"), array("%%", "%r", "%n", "%t"), $template);
 					$y = 0;
-					if ($objItem->InsertionStrings != NULL) {
-						foreach ($objItem->InsertionStrings as $is) {
+					if ($objItem->InsertionStrings != NULL)
+					{
+						foreach ($objItem->InsertionStrings as $is)
+						{
 							$template = str_replace($is, '%' . $y, $template);
 							$y++;
 						}
@@ -125,7 +163,8 @@ foreach ($logfiles_array as $logfilename){
 					${"norm_query_" . $value} .= "
 					INSERT OR IGNORE INTO " . $value . " (" . $value . ") VALUES ('" . str_replace("'", "''", $template) . "'); ";
 				}
-				if ($x >= $batchsize) {
+				if ($x >= $batchsize)
+				{
 					${"norm_query_" . $value} .= " COMMIT;";
 					$dbh->exec(${"norm_query_" . $value});
 					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
@@ -136,7 +175,8 @@ foreach ($logfiles_array as $logfilename){
 						'" . $objItem->ComputerName . "',
 						'" . $objItem->RecordNumber . "',
 						'" . win_time($objItem->TimeWritten) . "',";
-			foreach ($snorm as $value) {
+			foreach ($snorm as $value)
+			{
 				$query .= "
 						(
 							SELECT
@@ -145,11 +185,16 @@ foreach ($logfiles_array as $logfilename){
 								" . $value . "
 							WHERE
 								" . $value . " = '";
-				if (!in_array($value, array("InsertionStrings", "Template"))) {
+				if (!in_array($value, array("InsertionStrings", "Template")))
+				{
 					$query .= str_replace("'", "''", $objItem->$value);
-				} else if ($value == "InsertionStrings") {
+				}
+				else if ($value == "InsertionStrings")
+				{
 					$query .= str_replace("'", "''", implode(",", $insertionStrings));
-				} else if ($value == "Template") {
+				}
+				else if ($value == "Template")
+				{
 					$query .= str_replace("'", "''", $template);
 				}
 				$query .= "'
@@ -157,9 +202,12 @@ foreach ($logfiles_array as $logfilename){
 			};
 			$query = substr($query, 0, -1) . "
 					); ";
-			if ($x < $batchsize) {
+			if ($x < $batchsize)
+			{
 				$x++;
-			} else {
+			}
+			else
+			{
 				$total += $x;
 				$x = 0;
 				//print $query . " COMMIT;\n\n";
@@ -168,8 +216,10 @@ foreach ($logfiles_array as $logfilename){
 					BEGIN TRANSACTION; ";
 			};
 		};
-		foreach ($snorm as $key => $value) {
-			if (!empty(${"norm_query_" . $value})) {
+		foreach ($snorm as $key => $value)
+		{
+			if (!empty(${"norm_query_" . $value}))
+			{
 				$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
 			};
 		};
@@ -177,7 +227,7 @@ foreach ($logfiles_array as $logfilename){
 		$total += $x;
 		$query = "
 			SELECT
-				MAX(RecordNumber) AS 'RecordNumber'
+				IFNULL(MAX(RecordNumber), 0) AS 'RecordNumber'
 			FROM Events
 			WHERE
 				LogFileID = (
@@ -200,7 +250,7 @@ foreach ($logfiles_array as $logfilename){
 			WHERE
 				logFile = '" . $logfilename . "';
 		";
-		$avarice_dbh->exec($query);
+		$dbh->exec($query);
 	};
 };
 
@@ -209,6 +259,17 @@ $query = "
 		(startTime, endTime, status, eventLogs, eventCount)
 	VALUES
 		('" . date('Y-m-d H:i:s', $runTimeEvent) . "', '" . date('Y-m-d H:i:s') . "', 'success', '" . implode(",", $logfiles_array) . "', " . $total . ");";
+$dbh->exec($query);
+$query = "
+	INSERT OR IGNORE INTO agent_module
+		(moduleName)
+	VALUES
+		('eventLog');
+	UPDATE agent_module
+	SET
+		lastRan = '" . date('Y-m-d H:i:s', $runTimeEvent) . "'
+	WHERE
+		moduleName = 'eventLog';";
 $avarice_dbh->exec($query);
 
 ?>

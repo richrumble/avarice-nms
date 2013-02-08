@@ -53,7 +53,7 @@ if ($avarice_dbExists == FALSE)
 	$avarice_dbh->exec($query);
 }
 
-// List of modules that have ben installed (ran at least once)
+// List of modules that have been installed (ran at least once)
 $modulesInstalled = array();
 $query = "
 	SELECT
