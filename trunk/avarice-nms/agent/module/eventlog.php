@@ -41,6 +41,8 @@ $query = "
 $result   = $avarice_dbh->query($query)->fetch();
 $firstRun = $result['Count'];
 
+$firstRun = 1;
+
 if ($firstRun == 0)
 {
 	$query = "
@@ -65,6 +67,25 @@ if ($firstRun == 0)
 			endTime TEXT,
 			lastEventID INTEGER
 		);
+		CREATE TABLE mf_messageFile
+		(
+			messageFileID INTEGER PRIMARY KEY,
+			eventLog TEXT,
+			source TEXT,
+			file TEXT,
+			fileVersion TEXT,
+			productVersion TEXT,
+			numberMessages INTEGER
+		);
+		CREATE TABLE mf_message
+		(
+			messageID INTEGER PRIMARY KEY,
+			messageFileID INTEGER,
+			identifier INTEGER,
+			messageTemplate TEXT,
+			jenkins1 TEXT,
+			jenkins2 TEXT
+		);
 		CREATE TABLE events
 		(
 			pkID INTEGER PRIMARY KEY,
@@ -81,6 +102,87 @@ if ($firstRun == 0)
 	$dbh->exec($query);
 }
 
+// Get Message Files and Templates
+exec("reg.exe query HKLM\SYSTEM\CurrentControlSet\services\eventlog /s", $output);
+
+$messageFiles = array();
+$x = 0;
+foreach ($output as $line)
+{
+	$line = trim($line);
+	if (!empty($line))
+	{
+		$compString = substr($line, 0, 61);
+		if ($compString == "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\eventlog")
+		{
+			$hkey = explode("\\", $line);
+			if (count($hkey) == 7)
+			{
+				$eventSource = $hkey[6];
+				if (empty($messageFiles[$eventLog][$eventSource]))
+				{
+					$messageFiles[$eventLog][$eventSource] = array();
+				}
+			}
+			else if (count($hkey) == 6)
+			{
+				$eventSource = "";
+				$eventLog    = $hkey[5];
+				if (empty($messageFiles[$eventLog]))
+				{
+					$messageFiles[$eventLog] = array();
+				}
+			}
+			else
+			{
+				$eventSource = "";
+				$eventLog    = "";
+			}
+		}
+		else
+		{
+			if (!empty($eventSource))
+			{
+				$hvalue = explode("    ", $line);
+				if (substr($hvalue[0], -11) == "MessageFile" and !empty($hvalue[2]))
+				{
+					$messageFiles[$eventLog][$eventSource][] = $hvalue[2];
+				}
+			}
+		}
+	}
+}
+
+foreach($messageFiles as $el => $sources)
+{
+	foreach($sources as $source => $files)
+	{
+		foreach ($files as $filel)
+		{
+			$filelist = explode(";", $filel);
+			foreach ($filelist as $file)
+			{
+				unset($output);
+				$file = str_ireplace(array("%systemroot%", "%programfiles%"), array(getenv('SYSTEMROOT'), getenv('PROGRAMFILES')), $file);
+				if (!is_file($file) and !is_file(getenv('SYSTEMROOT') . "\\system32\\" . $file))
+				{
+					continue;
+				}
+				else if (!is_file($file))
+				{
+					$file = getenv('SYSTEMROOT') . "\\system32\\" . $file;
+				}
+				exec("wrcinfo.exe \"" . $file . "\"", $output);
+				$fileVersion = substr($output[6], 17);
+				$productVersion = substr($output[7], 20);
+				print $fileVersion . "," . $productVersion . "\n";
+			}
+		}
+	}
+}
+print_r($messageFiles);
+
+/*
 // Make WMI connection
 $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy,(Security)}!//.\\root\\cimv2");
 
@@ -278,5 +380,5 @@ $query = "
 	WHERE
 		moduleName = 'eventLog';";
 $avarice_dbh->exec($query);
-
+*/
 ?>
