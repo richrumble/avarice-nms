@@ -1,4 +1,9 @@
 {
+	"agentDirectory":
+	{
+		"Description": "Local path",
+		"path":        "C:/wamp/www/avarice-nms/agent/"
+	},
 	"avariceDataFile":
 	{
 		"Description": "Where local data is stored",

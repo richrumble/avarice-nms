@@ -103,50 +103,40 @@ if ($firstRun == 0)
 }
 
 // Get Message Files and Templates
-exec("reg.exe query HKLM\SYSTEM\CurrentControlSet\services\eventlog /s", $output);
+include_once($config['agentDirectory']['path'] . "include/registry.php");
+
+$regarray = Win32RegistryIterator($o_Win32Registry = new COM('winmgmts://./root/default:StdRegProv'), HKEY_LOCAL_MACHINE, 'SYSTEM\\CurrentControlSet\\services\\eventlog');
 
 $messageFiles = array();
 $x = 0;
-foreach ($output as $line)
+foreach ($regarray as $log => $sources)
 {
-	$line = trim($line);
-	if (!empty($line))
+	foreach ($sources as $source => $keys)
 	{
-		$compString = substr($line, 0, 61);
-		if ($compString == "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\eventlog")
+		if
+		(
+			(count($keys) == 2 and isset($keys['type']) and isset($keys['value']))
+			or
+			(!is_array($keys))
+		)
 		{
-			$hkey = explode("\\", $line);
-			if (count($hkey) == 7)
-			{
-				$eventSource = $hkey[6];
-				if (empty($messageFiles[$eventLog][$eventSource]))
-				{
-					$messageFiles[$eventLog][$eventSource] = array();
-				}
-			}
-			else if (count($hkey) == 6)
-			{
-				$eventSource = "";
-				$eventLog    = $hkey[5];
-				if (empty($messageFiles[$eventLog]))
-				{
-					$messageFiles[$eventLog] = array();
-				}
-			}
-			else
-			{
-				$eventSource = "";
-				$eventLog    = "";
-			}
+			//Do nothing
 		}
 		else
 		{
-			if (!empty($eventSource))
+			foreach ($keys as $key => $data)
 			{
-				$hvalue = explode("    ", $line);
-				if (substr($hvalue[0], -11) == "MessageFile" and !empty($hvalue[2]))
+				if (substr($key, -11) == 'MessageFile' and !empty($data['value']))
 				{
-					$messageFiles[$eventLog][$eventSource][] = $hvalue[2];
+					if (!isset($messageFiles[$log]))
+					{
+						$messageFiles[$log] = array();
+					}
+					if (!isset($messageFiles[$log][$source]))
+					{
+						$messageFiles[$log][$source] = array();
+					}
+					$messageFiles[$log][$source][] = $data['value'];
 				}
 			}
 		}
@@ -180,7 +170,6 @@ foreach($messageFiles as $el => $sources)
 		}
 	}
 }
-print_r($messageFiles);
 
 /*
 // Make WMI connection
