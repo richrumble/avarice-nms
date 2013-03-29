@@ -143,6 +143,8 @@ foreach ($regarray as $log => $sources)
 	}
 }
 
+
+$objShell = new COM("Shell.Application");
 foreach($messageFiles as $el => $sources)
 {
 	foreach($sources as $source => $files)
@@ -162,10 +164,17 @@ foreach($messageFiles as $el => $sources)
 				{
 					$file = getenv('SYSTEMROOT') . "\\system32\\" . $file;
 				}
-				exec("wrcinfo.exe \"" . $file . "\"", $output);
-				$fileVersion = substr($output[6], 17);
-				$productVersion = substr($output[7], 20);
-				print $fileVersion . "," . $productVersion . "\n";
+				// Use this info to see if file already exists in DB
+				$objFolder = $objShell->Namespace(substr($file, 0, strrpos($file, "\\")));
+				$fileVersion = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 156);
+				$productVersion = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 271);
+				$dateModified = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 3);
+				$dateCreated = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 4);
+				$file_hash = hash_file("md5", $file);
+				print $fileVersion . "," . $productVersion . "," . $dateModified . "," . $dateCreated . "," . $file_hash . "\n";
+				
+				// if file !exists use wrcinfo.exe to get messages
+				//exec("wrcinfo.exe \"" . $file . "\"", $output);
 			}
 		}
 	}
