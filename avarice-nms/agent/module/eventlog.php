@@ -41,7 +41,7 @@ $query = "
 $result   = $avarice_dbh->query($query)->fetch();
 $firstRun = $result['Count'];
 
-$firstRun = 1;
+//$firstRun = 1;
 
 if ($firstRun == 0)
 {
@@ -75,7 +75,10 @@ if ($firstRun == 0)
 			file TEXT,
 			fileVersion TEXT,
 			productVersion TEXT,
-			numberMessages INTEGER
+			fileCreated TEXT,
+			fileModified TEXT,
+			dateCreated TEXT,
+			fileHash TEXT
 		);
 		CREATE TABLE mf_message
 		(
@@ -165,21 +168,45 @@ foreach($messageFiles as $el => $sources)
 					$file = getenv('SYSTEMROOT') . "\\system32\\" . $file;
 				}
 				// Use this info to see if file already exists in DB
+				$mf_filename = substr(strrchr($file, "\\"), 1);
 				$objFolder = $objShell->Namespace(substr($file, 0, strrpos($file, "\\")));
-				$fileVersion = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 156);
-				$productVersion = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 271);
-				$dateModified = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 3);
-				$dateCreated = $objFolder->GetDetailsOf($objFolder->ParseName(substr(strrchr($file, "\\"), 1)), 4);
+				$fileVersion = $objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 156);
+				$productVersion = $objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 271);
+				$fileModified = date('Y-m-d H:i:s', strtotime($objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 3)));
+				$fileCreated = date('Y-m-d H:i:s', strtotime($objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 4)));
 				$file_hash = hash_file("md5", $file);
-				print $fileVersion . "," . $productVersion . "," . $dateModified . "," . $dateCreated . "," . $file_hash . "\n";
-				
+				$query = "
+					select
+						messageFileID
+					from
+						mf_messageFile
+					where
+						eventLog = '" . $el . "'
+						and source = '" . $source . "'
+						and file = '" . $mf_filename . "'
+						and fileVersion = '" . $fileVersion . "'
+						and productVersion = '" . $productVersion . "'
+						and fileModified = '" . $fileModified . "'
+						and fileHash = '" . $file_hash . "';";
+				$result = $dbh->query($query)->fetch();
+				if (empty($result['messageFileID']))
+				{
+					$insertQuery = "
+						insert into mf_messageFile
+							(eventLog, source, file, fileVersion, productVersion, fileCreated, fileModified, dateCreated, fileHash)
+						values
+							('" . $el . "','" . $source . "','" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
+					$dbh->exec($insertQuery);
+					$result = $dbh->query($query)->fetch();
+				}
+				print $result['messageFileID'] . "\n";
 				// if file !exists use wrcinfo.exe to get messages
 				//exec("wrcinfo.exe \"" . $file . "\"", $output);
 			}
 		}
 	}
 }
-
+print "getting here";
 /*
 // Make WMI connection
 $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy,(Security)}!//.\\root\\cimv2");
@@ -359,13 +386,13 @@ foreach ($logfiles_array as $logfilename)
 		$dbh->exec($query);
 	};
 };
-
 $query = "
 	INSERT INTO eventLog_runLog
 		(startTime, endTime, status, eventLogs, eventCount)
 	VALUES
 		('" . date('Y-m-d H:i:s', $runTimeEvent) . "', '" . date('Y-m-d H:i:s') . "', 'success', '" . implode(",", $logfiles_array) . "', " . $total . ");";
 $dbh->exec($query);
+*/
 $query = "
 	INSERT OR IGNORE INTO agent_module
 		(moduleName, version, installDate)
@@ -378,5 +405,5 @@ $query = "
 	WHERE
 		moduleName = 'eventLog';";
 $avarice_dbh->exec($query);
-*/
+
 ?>
