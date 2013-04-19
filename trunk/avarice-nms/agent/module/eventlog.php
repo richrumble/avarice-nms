@@ -189,6 +189,7 @@ foreach($messageFiles as $el => $sources)
 						and fileModified = '" . $fileModified . "'
 						and fileHash = '" . $file_hash . "';";
 				$result = $dbh->query($query)->fetch();
+				// if file !exists use wrcinfo.exe to get messages
 				if (empty($result['messageFileID']))
 				{
 					$insertQuery = "
@@ -198,15 +199,43 @@ foreach($messageFiles as $el => $sources)
 							('" . $el . "','" . $source . "','" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
 					$dbh->exec($insertQuery);
 					$result = $dbh->query($query)->fetch();
+					exec("wrcinfo.exe \"" . $file . "\"", $output);
+					$templateLineIDs = array();
+					foreach ($output as $k => $v)
+					{
+						if (stripos($v, "Msg-Template:") !== false)
+						{
+							$templateLineIDs[] = $k;
+						}
+					}
+					foreach ($templateLineIDs as $templateLineID)
+					{
+						#messageFileID, identifier, messageTemplate, jenkins1, jenkins2
+						$identifier = substr($output[$templateLineID - 1], 8);
+						$messageTemplate = substr($output[$templateLineID], 14);
+						$x = 1;
+						while (substr($output[$templateLineID + $x], 0, 14) != "Template-Hash:")
+						{
+							$messageTemplate += "
+" . $output[$templateLineID + $x];
+							$x++;
+						}
+						$messageTemplate = str_replace("'", "''", $messageTemplate);
+						$jenks = substr($output[$templateLineID + $x], 15);
+						list($jenkins1, $jenkins2) = explode(",", $jenks);
+						$insertQuery = "
+							insert into mf_message
+								(messageFileID, identifier, messageTemplate, jenkins1, jenkins2)
+							values
+								('" . $result['messageFileID'] . "', '" . $identifier . "', '" . $messageTemplate . "', '" . $jenkins1 . "', '" . $jenkins2 . "');";
+						$dbh->exec($insertQuery);
+					}
 				}
-				print $result['messageFileID'] . "\n";
-				// if file !exists use wrcinfo.exe to get messages
-				//exec("wrcinfo.exe \"" . $file . "\"", $output);
 			}
 		}
 	}
 }
-print "getting here";
+
 /*
 // Make WMI connection
 $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy,(Security)}!//.\\root\\cimv2");
