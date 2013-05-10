@@ -67,11 +67,21 @@ if ($firstRun == 0)
 			endTime TEXT,
 			lastEventID INTEGER
 		);
+		CREATE TABLE mf_eventLog
+		(
+			eventLogID INTEGER PRIMARY KEY,
+			eventLog TEXT,
+			dateCreated TEXT
+		);
+		CREATE TABLE mf_source
+		(
+			sourceID INTEGER PRIMARY KEY,
+			source TEXT,
+			dateCreated TEXT
+		);
 		CREATE TABLE mf_messageFile
 		(
 			messageFileID INTEGER PRIMARY KEY,
-			eventLog TEXT,
-			source TEXT,
 			file TEXT,
 			fileVersion TEXT,
 			productVersion TEXT,
@@ -79,6 +89,12 @@ if ($firstRun == 0)
 			fileModified TEXT,
 			dateCreated TEXT,
 			fileHash TEXT
+		);
+		CREATE TABLE mf_eventLogSourceFile
+		(
+			eventLogID INTEGER,
+			sourceID INTEGER,
+			messageFileID INTEGER
 		);
 		CREATE TABLE mf_message
 		(
@@ -150,8 +166,48 @@ foreach ($regarray as $log => $sources)
 $objShell = new COM("Shell.Application");
 foreach($messageFiles as $el => $sources)
 {
+	$query = "
+		select
+			eventLogID
+		from
+			mf_eventLog
+		where
+			eventLog = '" . $el . "';";
+	$result = $dbh->query($query)->fetch();
+	$eventLogID = $result['eventLogID'];
+	if (empty($eventLogID))
+	{
+		$insertQuery = "
+			insert into mf_eventLog
+				(eventLog, dateCreated)
+			values
+				('" . $el . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
+		$dbh->exec($insertQuery);
+		$result = $dbh->query($query)->fetch();
+		$eventLogID = $result['eventLogID'];
+	}
 	foreach($sources as $source => $files)
 	{
+		$query = "
+			select
+				sourceID
+			from
+				mf_source
+			where
+				source = '" . $source . "';";
+		$result = $dbh->query($query)->fetch();
+		$sourceID = $result['sourceID'];
+		if (empty($sourceID))
+		{
+			$insertQuery = "
+				insert into mf_source
+					(source, dateCreated)
+				values
+					('" . $source . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
+			$dbh->exec($insertQuery);
+			$result = $dbh->query($query)->fetch();
+			$sourceID = $result['sourceID'];
+		}
 		foreach ($files as $filel)
 		{
 			$filelist = explode(";", $filel);
@@ -181,24 +237,24 @@ foreach($messageFiles as $el => $sources)
 					from
 						mf_messageFile
 					where
-						eventLog = '" . $el . "'
-						and source = '" . $source . "'
-						and file = '" . $mf_filename . "'
+						file = '" . $mf_filename . "'
 						and fileVersion = '" . $fileVersion . "'
 						and productVersion = '" . $productVersion . "'
 						and fileModified = '" . $fileModified . "'
 						and fileHash = '" . $file_hash . "';";
 				$result = $dbh->query($query)->fetch();
+				$messageFileID = $result['messageFileID'];
 				// if file !exists use wrcinfo.exe to get messages
-				if (empty($result['messageFileID']))
+				if (empty($messageFileID))
 				{
 					$insertQuery = "
 						insert into mf_messageFile
-							(eventLog, source, file, fileVersion, productVersion, fileCreated, fileModified, dateCreated, fileHash)
+							(file, fileVersion, productVersion, fileCreated, fileModified, dateCreated, fileHash)
 						values
-							('" . $el . "','" . $source . "','" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
+							('" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
 					$dbh->exec($insertQuery);
 					$result = $dbh->query($query)->fetch();
+					$messageFileID = $result['messageFileID'];
 					exec("wrcinfo.exe \"" . $file . "\"", $output);
 					$templateLineIDs = array();
 					foreach ($output as $k => $v)
@@ -230,6 +286,25 @@ foreach($messageFiles as $el => $sources)
 								('" . $result['messageFileID'] . "', '" . $identifier . "', '" . $messageTemplate . "', '" . $jenkins1 . "', '" . $jenkins2 . "');";
 						$dbh->exec($insertQuery);
 					}
+				}
+				$query = "
+					select
+						count(*) as 'Count'
+					from mf_eventLogSourceFile
+					where
+						eventLogID = " . $eventLogID . "
+						and sourceID = " . $sourceID . "
+						and messageFileID = " . $messageFileID . ";";
+				$result = $dbh->query($query)->fetch();
+				if ($result['Count'] < 1)
+				{
+					$insertQuery = "
+						insert into mf_eventLogSourceFile
+							(eventLogID, sourceID, messageFileID)
+						values
+							(" . $eventLogID . ", " . $sourceID . ", " . $messageFileID . ");";
+					$dbh->exec($insertQuery);
+					$result = $dbh->query($query)->fetch();
 				}
 			}
 		}
