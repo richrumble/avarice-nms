@@ -8,18 +8,6 @@ function win_time($timestr)
 $runTimeEvent = date('U');
 $batchsize = 1000;
 
-$snorm = array
-(
-	"Template",
-	"InsertionStrings",
-	"Category",
-	"EventCode",
-	"LogFile",
-	"SourceName",
-	"Type",
-	"User"
-);
-
 // Determines if this is the first run and creates tables if it is
 try
 {
@@ -46,57 +34,41 @@ $firstRun = $result['Count'];
 if ($firstRun == 0)
 {
 	$query = "
-		CREATE TABLE eventLog_logFiles
+		CREATE TABLE events
 		(
-			createdDate TEXT,
-			modifiedDate TEXT,
-			logFile TEXT UNIQUE,
-			lastEventID NUMERIC
+			pkID INTEGER PRIMARY KEY,
+			ComputerName TEXT,
+			RecordNumber NUMERIC,
+			TimeWritten TEXT,
+			eventLogID NUMERIC,
+			sourceID NUMERIC,
+			EventIdentifier NUMERIC,
+			EventCode NUMERIC,
+			Type NUMERIC,
+			Category NUMERIC,
+			UserID NUMERIC,
+			InsertionStringID NUMERIC
 		);
-		CREATE TABLE eventLog_runLog
-		(
-			startTime TEXT,
-			endTime TEXT,
-			status TEXT,
-			eventLogs TEXT,
-			eventCount INT
-		);
-		CREATE TABLE eventLog_upload
-		(
-			startTime TEXT,
-			endTime TEXT,
-			lastEventID INTEGER
-		);
-		CREATE TABLE mf_eventLog
+		CREATE TABLE eventLog
 		(
 			eventLogID INTEGER PRIMARY KEY,
-			eventLog TEXT,
-			dateCreated TEXT
+			eventLog TEXT UNIQUE,
+			createdDate TEXT,
+			modifiedDate TEXT,
+			lastEventID NUMERIC
 		);
-		CREATE TABLE mf_source
-		(
-			sourceID INTEGER PRIMARY KEY,
-			source TEXT,
-			dateCreated TEXT
-		);
-		CREATE TABLE mf_messageFile
-		(
-			messageFileID INTEGER PRIMARY KEY,
-			file TEXT,
-			fileVersion TEXT,
-			productVersion TEXT,
-			fileCreated TEXT,
-			fileModified TEXT,
-			dateCreated TEXT,
-			fileHash TEXT
-		);
-		CREATE TABLE mf_eventLogSourceFile
+		CREATE TABLE eventLogSourceFile
 		(
 			eventLogID INTEGER,
 			sourceID INTEGER,
 			messageFileID INTEGER
 		);
-		CREATE TABLE mf_message
+		CREATE TABLE InsertionString
+		(
+			InsertionStringID INTEGER PRIMARY KEY,
+			InsertionString TEXT UNIQUE
+		);
+		CREATE TABLE message
 		(
 			messageID INTEGER PRIMARY KEY,
 			messageFileID INTEGER,
@@ -105,19 +77,42 @@ if ($firstRun == 0)
 			jenkins1 TEXT,
 			jenkins2 TEXT
 		);
-		CREATE TABLE events
+		CREATE TABLE messageFile
 		(
-			pkID INTEGER PRIMARY KEY,
-			ComputerName TEXT,
-			RecordNumber NUMERIC,
-			TimeWritten TEXT,";
-	foreach ($snorm as $value)
-	{
-		$dbh->exec("CREATE TABLE " . $value . " (pkID INTEGER PRIMARY KEY, " . $value . " TEXT UNIQUE)");
-		$query .= "
-			" . 	$value . "ID INT,";
-	}
-	$query = substr($query, 0, -1) . ");";
+			messageFileID INTEGER PRIMARY KEY,
+			file TEXT,
+			fileVersion TEXT,
+			productVersion TEXT,
+			fileCreated TEXT,
+			fileModified TEXT,
+			createdDate TEXT,
+			fileHash TEXT
+		);
+		CREATE TABLE runLog
+		(
+			startTime TEXT,
+			endTime TEXT,
+			status TEXT,
+			eventLogs TEXT,
+			eventCount INT
+		);
+		CREATE TABLE source
+		(
+			sourceID INTEGER PRIMARY KEY,
+			source TEXT,
+			createdDate TEXT
+		);
+		CREATE TABLE upload
+		(
+			startTime TEXT,
+			endTime TEXT,
+			lastEventID INTEGER
+		);
+		CREATE TABLE User
+		(
+			UserID INTEGER PRIMARY KEY,
+			User TEXT UNIQUE
+		);";
 	$dbh->exec($query);
 }
 
@@ -162,7 +157,7 @@ foreach ($regarray as $log => $sources)
 	}
 }
 
-
+$logfiles_array = array();
 $objShell = new COM("Shell.Application");
 foreach($messageFiles as $el => $sources)
 {
@@ -170,7 +165,7 @@ foreach($messageFiles as $el => $sources)
 		select
 			eventLogID
 		from
-			mf_eventLog
+			eventLog
 		where
 			eventLog = '" . $el . "';";
 	$result = $dbh->query($query)->fetch();
@@ -178,21 +173,22 @@ foreach($messageFiles as $el => $sources)
 	if (empty($eventLogID))
 	{
 		$insertQuery = "
-			insert into mf_eventLog
-				(eventLog, dateCreated)
+			insert into eventLog
+				(eventLog, createdDate)
 			values
 				('" . $el . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
 		$dbh->exec($insertQuery);
 		$result = $dbh->query($query)->fetch();
 		$eventLogID = $result['eventLogID'];
 	}
+	$logfiles_array[$eventLogID] = $el;
 	foreach($sources as $source => $files)
 	{
 		$query = "
 			select
 				sourceID
 			from
-				mf_source
+				source
 			where
 				source = '" . $source . "';";
 		$result = $dbh->query($query)->fetch();
@@ -200,8 +196,8 @@ foreach($messageFiles as $el => $sources)
 		if (empty($sourceID))
 		{
 			$insertQuery = "
-				insert into mf_source
-					(source, dateCreated)
+				insert into source
+					(source, createdDate)
 				values
 					('" . $source . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
 			$dbh->exec($insertQuery);
@@ -235,7 +231,7 @@ foreach($messageFiles as $el => $sources)
 					select
 						messageFileID
 					from
-						mf_messageFile
+						messageFile
 					where
 						file = '" . $mf_filename . "'
 						and fileVersion = '" . $fileVersion . "'
@@ -248,8 +244,8 @@ foreach($messageFiles as $el => $sources)
 				if (empty($messageFileID))
 				{
 					$insertQuery = "
-						insert into mf_messageFile
-							(file, fileVersion, productVersion, fileCreated, fileModified, dateCreated, fileHash)
+						insert into messageFile
+							(file, fileVersion, productVersion, fileCreated, fileModified, createdDate, fileHash)
 						values
 							('" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
 					$dbh->exec($insertQuery);
@@ -280,7 +276,7 @@ foreach($messageFiles as $el => $sources)
 						$jenks = substr($output[$templateLineID + $x], 15);
 						list($jenkins1, $jenkins2) = explode(",", $jenks);
 						$insertQuery = "
-							insert into mf_message
+							insert into message
 								(messageFileID, identifier, messageTemplate, jenkins1, jenkins2)
 							values
 								('" . $result['messageFileID'] . "', '" . $identifier . "', '" . $messageTemplate . "', '" . $jenkins1 . "', '" . $jenkins2 . "');";
@@ -290,7 +286,7 @@ foreach($messageFiles as $el => $sources)
 				$query = "
 					select
 						count(*) as 'Count'
-					from mf_eventLogSourceFile
+					from eventLogSourceFile
 					where
 						eventLogID = " . $eventLogID . "
 						and sourceID = " . $sourceID . "
@@ -299,7 +295,7 @@ foreach($messageFiles as $el => $sources)
 				if ($result['Count'] < 1)
 				{
 					$insertQuery = "
-						insert into mf_eventLogSourceFile
+						insert into eventLogSourceFile
 							(eventLogID, sourceID, messageFileID)
 						values
 							(" . $eventLogID . ", " . $sourceID . ", " . $messageFileID . ");";
@@ -311,31 +307,21 @@ foreach($messageFiles as $el => $sources)
 	}
 }
 
-/*
 // Make WMI connection
 $objWMIService = new COM("winmgmts:{impersonationLevel=impersonate,authenticationLevel=pktPrivacy,(Security)}!//.\\root\\cimv2");
-
-// Gather list of EventLog Files
-$logFileDetails = $objWMIService->ExecQuery("Select * from Win32_NTEventLogFile",'WQL',48);
-$logfiles_array = array();
-foreach ($logFileDetails as $logFileDetail)
-{
-	$logfiles_array[] = $logFileDetail->LogFileName;
-}
-
 $total = 0;
 
 $emptyvariant = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE RecordNumber = 'string'",'WQL',48);
 
-foreach ($logfiles_array as $logfilename)
+foreach ($logfiles_array as $logfileID => $logfilename)
 {
 	$x = 0;
 	$query = "
 		SELECT
 			*
-		FROM eventLog_logFiles
+		FROM eventLog
 		WHERE
-			logFile = '" . $logfilename . "';";
+			eventLogID = '" . $logfileID . "';";
 	try
 	{
 		$result = $dbh->query($query)->fetch();
@@ -353,88 +339,66 @@ foreach ($logfiles_array as $logfilename)
 	if ($colItems != $emptyvariant)
 	{
 		$query = "BEGIN TRANSACTION; ";
+		$norm_query = "BEGIN TRANSACTION; ";
 		foreach ($colItems as $objItem)
 		{
-			foreach ($snorm as $value)
+			$norm_query .= "
+				INSERT OR IGNORE INTO User (User) VALUES ('" . $objItem->User . "');";
+			$norm_query .= "
+				INSERT OR IGNORE INTO InsertionString (InsertionString) VALUES ('";
+			$insertionStrings = array();
+			if ($objItem->InsertionStrings != NULL)
 			{
-				if ($x == 0)
+				foreach ($objItem->InsertionStrings as $oiv)
 				{
-					${"norm_query_" . $value} = "BEGIN TRANSACTION; ";
-				}
-				if (!in_array($value, array("InsertionStrings", "Template")))
-				{
-					${"norm_query_" . $value} .= "
-					INSERT OR IGNORE INTO " . $value . " (" . $value . ") VALUES ('" . $objItem->$value . "'); ";
-				}
-				else if ($value == "InsertionStrings")
-				{
-					${"norm_query_" . $value} .= "
-					INSERT OR IGNORE INTO " . $value . " (" . str_replace("'", "''", $value) . ") VALUES ('";
-					$insertionStrings = array();
-					if ($objItem->$value != NULL)
-					{
-						foreach ($objItem->$value as $oiv)
-						{
-							$insertionStrings[] = $oiv;
-						}
-					}
-					${"norm_query_" . $value} .= str_replace("'", "''", implode(",", $insertionStrings)) . "'); ";
-				}
-				else if ($value == "Template")
-				{
-					$template = $objItem->Message;
-					$template = str_replace(array("%", "\r", "\n", "\t"), array("%%", "%r", "%n", "%t"), $template);
-					$y = 0;
-					if ($objItem->InsertionStrings != NULL)
-					{
-						foreach ($objItem->InsertionStrings as $is)
-						{
-							$template = str_replace($is, '%' . $y, $template);
-							$y++;
-						}
-					}
-					${"norm_query_" . $value} .= "
-					INSERT OR IGNORE INTO " . $value . " (" . $value . ") VALUES ('" . str_replace("'", "''", $template) . "'); ";
-				}
-				if ($x >= $batchsize)
-				{
-					${"norm_query_" . $value} .= " COMMIT;";
-					$dbh->exec(${"norm_query_" . $value});
-					${"norm_query_" . $value} = "BEGIN TRANSACTION;";
+					$insertionStrings[] = $oiv;
 				}
 			}
-			$query .= "INSERT INTO Events (ComputerName, RecordNumber, TimeWritten, TemplateID, InsertionStringsID, CategoryID, EventCodeID, LogFileID, SourceNameID, TypeID, UserID) VALUES
+			$norm_query .= trim(str_replace("'", "''", implode(",", $insertionStrings))) . "'); ";
+			if ($x >= $batchsize)
+			{
+				$dbh->exec($norm_query .= " COMMIT;");
+				$norm_query = "BEGIN TRANSACTION;";
+			}
+			$query .= "
+				INSERT INTO Events (ComputerName, RecordNumber, TimeWritten, eventLogID, sourceID, EventIdentifier, EventCode, Type, Category, UserID, InsertionStringID) VALUES
 					(
 						'" . $objItem->ComputerName . "',
 						'" . $objItem->RecordNumber . "',
-						'" . win_time($objItem->TimeWritten) . "',";
-			foreach ($snorm as $value)
-			{
-				$query .= "
+						'" . win_time($objItem->TimeWritten) . "',
 						(
 							SELECT
-								pkID
-							FROM
-								" . $value . "
+								eventlogID
+							FROM eventLog
 							WHERE
-								" . $value . " = '";
-				if (!in_array($value, array("InsertionStrings", "Template")))
-				{
-					$query .= str_replace("'", "''", $objItem->$value);
-				}
-				else if ($value == "InsertionStrings")
-				{
-					$query .= str_replace("'", "''", implode(",", $insertionStrings));
-				}
-				else if ($value == "Template")
-				{
-					$query .= str_replace("'", "''", $template);
-				}
-				$query .= "'
-						),";
-			};
-			$query = substr($query, 0, -1) . "
-					); ";
+								eventLog = '" . $objItem->LogFile . "'
+						),
+						(
+							SELECT
+								sourceID
+							FROM source
+							WHERE
+								source = '" . $objItem->SourceName . "'
+						),
+						'" . $objItem->EventIdentifier . "',
+						'" . $objItem->EventCode . "',
+						'" . $objItem->EventType . "',
+						'" . $objItem->Category . "',
+						(
+							SELECT
+								UserID
+							FROM User
+							WHERE
+								User = '" . $objItem->User . "'
+						),
+						(
+							SELECT
+								InsertionStringID
+							FROM InsertionString
+							WHERE
+								InsertionString = '" . trim(str_replace("'", "''", implode(",", $insertionStrings))) . "'
+						)
+					);";
 			if ($x < $batchsize)
 			{
 				$x++;
@@ -443,60 +407,55 @@ foreach ($logfiles_array as $logfilename)
 			{
 				$total += $x;
 				$x = 0;
-				//print $query . " COMMIT;\n\n";
+				$dbh->exec($norm_query . " COMMIT;");
 				$dbh->exec($query . " COMMIT;");
-				$query = "
-					BEGIN TRANSACTION; ";
+				$query = "BEGIN TRANSACTION;";
+				$norm_query = "BEGIN TRANSACTION;";
 			};
 		};
-		foreach ($snorm as $key => $value)
-		{
-			if (!empty(${"norm_query_" . $value}))
-			{
-				$dbh->exec(${"norm_query_" . $value} . " COMMIT;");
-			};
-		};
+		$dbh->exec($norm_query . " COMMIT;");
 		$dbh->exec($query . " COMMIT;");
 		$total += $x;
-		$query = "
-			SELECT
-				IFNULL(MAX(RecordNumber), 0) AS 'RecordNumber'
-			FROM Events
-			WHERE
-				LogFileID = (
-					SELECT
-						pkID
-					FROM LogFile
-					WHERE
-						LogFile = '" . $logfilename . "'
-				);";
-		$result = $dbh->query($query)->fetch();
-		if ($result['RecordNumber'] == 4294967295)
-		{
-			$result['RecordNumber'] = 0;
-		};
-		$query = "
-			INSERT OR IGNORE INTO eventLog_logFiles
-				(createdDate, logFile)
-			VALUES
-				('" . date('Y-m-d H:i:s', $runTimeEpoch) . "', '" . $logfilename . "');
-			UPDATE eventLog_logFiles
-			SET
-				modifiedDate = '" . date('Y-m-d H:i:s', $runTimeEvent) . "',
-				lastEventID = " . $result['RecordNumber'] . "
-			WHERE
-				logFile = '" . $logfilename . "';
-		";
-		$dbh->exec($query);
 	};
+	$query = "
+		SELECT
+			IFNULL(MAX(RecordNumber), 0) AS 'RecordNumber'
+		FROM Events
+		WHERE
+			eventLogID = (
+				SELECT
+					pkID
+				FROM eventLog
+				WHERE
+					eventLog = '" . $logfilename . "'
+			);";
+	$result = $dbh->query($query)->fetch();
+	if ($result['RecordNumber'] == 4294967295)
+	{
+		$result['RecordNumber'] = 0;
+	};
+	$query = "
+		INSERT OR IGNORE INTO eventLog
+			(createdDate, eventLog)
+		VALUES
+			('" . date('Y-m-d H:i:s', $runTimeEpoch) . "', '" . $logfilename . "');
+		UPDATE eventLog
+		SET
+			modifiedDate = '" . date('Y-m-d H:i:s', $runTimeEvent) . "',
+			lastEventID = " . $result['RecordNumber'] . "
+		WHERE
+			eventLog = '" . $logfilename . "';
+	";
+	$dbh->exec($query);
 };
+
 $query = "
-	INSERT INTO eventLog_runLog
+	INSERT INTO runLog
 		(startTime, endTime, status, eventLogs, eventCount)
 	VALUES
 		('" . date('Y-m-d H:i:s', $runTimeEvent) . "', '" . date('Y-m-d H:i:s') . "', 'success', '" . implode(",", $logfiles_array) . "', " . $total . ");";
 $dbh->exec($query);
-*/
+
 $query = "
 	INSERT OR IGNORE INTO agent_module
 		(moduleName, version, installDate)
