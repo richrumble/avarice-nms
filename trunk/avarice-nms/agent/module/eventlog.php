@@ -422,13 +422,7 @@ foreach ($logfiles_array as $logfileID => $logfilename)
 			IFNULL(MAX(RecordNumber), 0) AS 'RecordNumber'
 		FROM Events
 		WHERE
-			eventLogID = (
-				SELECT
-					pkID
-				FROM eventLog
-				WHERE
-					eventLog = '" . $logfilename . "'
-			);";
+			eventLogID = " . $logfileID . ";";
 	$result = $dbh->query($query)->fetch();
 	if ($result['RecordNumber'] == 4294967295)
 	{
