@@ -334,8 +334,7 @@ foreach ($logfiles_array as $logfileID => $logfilename)
 	{
 		$result['lastEventID'] = 0;
 	}
-	$largestEvent = $result['lastEventID'] + 1000000;
-	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'] . " AND RecordNumber < " . $largestEvent,'WQL',48);
+	$colItems = $objWMIService->ExecQuery("Select * from Win32_NTLogEvent WHERE LogFile = '" . $logfilename . "' AND RecordNumber > " . $result['lastEventID'],'WQL',48);
 	if ($colItems != $emptyvariant)
 	{
 		$query = "BEGIN TRANSACTION; ";
