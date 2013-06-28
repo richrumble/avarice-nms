@@ -79,7 +79,7 @@ if ($formData['section'] == "eventLog")
 		$sth = $dbh->prepare($query);
 		$sth->execute();
 		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
-		$return[] = "All";
+		$return[1410065407] = "All";
 		foreach($result as $row)
 		{
 			$return[$row['UserID']] = $row['User'];
@@ -98,7 +98,7 @@ if ($formData['section'] == "eventLog")
 		$sth = $dbh->prepare($query);
 		$sth->execute();
 		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
-		$return[] = "All";
+		$return[1410065407] = "All";
 		foreach($result as $row)
 		{
 			$return[$row['eventLogID']] = $row['eventLog'];
@@ -117,7 +117,7 @@ if ($formData['section'] == "eventLog")
 		$sth = $dbh->prepare($query);
 		$sth->execute();
 		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
-		$return[] = "All";
+		$return[1410065407] = "All";
 		foreach($result as $row)
 		{
 			$return[$row['sourceID']] = $row['source'];
@@ -152,7 +152,7 @@ if ($formData['section'] == "eventLog")
 				on m.messageFileID = elsf.messageFileID
 				and m.identifier = e.EventIdentifier
 			where 1=1";
-		if (!empty($formData['userID']) and !in_array("All", $formData['userID']))
+		if (!empty($formData['userID']) and !in_array("1410065407", $formData['userID']))
 		{
 			$query .= "
 				and e.userID in
@@ -165,7 +165,7 @@ if ($formData['section'] == "eventLog")
 			$query = substr($query, 0, -1) . "
 				)";
 		}
-		if (!empty($formData['eventLogID']) and !in_array("All", $formData['eventLogID']))
+		if (!empty($formData['eventLogID']) and !in_array("1410065407", $formData['eventLogID']))
 		{
 			$query .= "
 				and e.eventLogID in
@@ -178,7 +178,7 @@ if ($formData['section'] == "eventLog")
 			$query = substr($query, 0, -1) . "
 				)";
 		}
-		if (!empty($formData['sourceID']) and !in_array("All", $formData['sourceID']))
+		if (!empty($formData['sourceID']) and !in_array("1410065407", $formData['sourceID']))
 		{
 			$query .= "
 				and e.sourceID in
