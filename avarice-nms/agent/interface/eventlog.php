@@ -1,29 +1,6 @@
 <html>
 	<head>
 		<script type = "text/javascript" src = "jquery-2.0.2.js"></script>
-		<script type = "text/javascript">
-			$("#mainForm").submit(function(){
-				var formData = $(this).serialize();
-				$.ajax({
-					type: "POST",
-					url: 'sqlite.ajax.php',
-					data: formData,
-					dataType: 'json',
-					success: function(jsonResult){
-						var items = [];
-						$.each(jsonResult['data'], function(key, val) {
-							var n=val.split(",");
-							items.push('<tr><td>' + n[0] + '</td><td>' + n[1] + '</td><td>' + n[2] + '</td><td>' + n[3] + '</td><td>' + n[4] + '</td><td>' + n[5] + '</td><td>' + n[6] + '</td></tr>');
-						});
-						$('<table/>', {
-							'id': 'resultTable',
-							html: items.join('')
-						}).appendTo('#resultPane');
-					}
-				});
-				return false;
-			});
-		</script>
 	</head>
 	<body>
 		<form id = "mainForm">
@@ -92,10 +69,15 @@
 					}).appendTo('#selectBoxes');
 				});
 			</script>
-			<input size = 30 type = "text" id = "searchString" name = "searchString" onkeyup="$('#mainForm').submit();"/>
+			<input size = 30 type = "text" id = "searchString" name = "searchString" onkeyup=""/>
 			<input type = "submit" value = "clickme" />
 		</form>
 		<script type = "text/javascript">
+			var timerid;
+			jQuery("#searchString").keyup(function(){
+				clearTimeout(timerid);
+				timerid = setTimeout(function() { $('#mainForm').submit(); }, 500);
+			});
 			$("#mainForm").submit(function(){
 				var formData = $(this).serialize();
 				$.ajax({
@@ -105,9 +87,11 @@
 					dataType: 'json',
 					success: function(jsonResult){
 						var items = [];
-						$.each(jsonResult['data'], function(computerName, eventLog, source, user, timeWritten, type, message) {
-							items.push('<tr><td>' + computerName + '</td><td>' + eventLog + '</td><td>' + source + '</td><td>' + user + '</td><td>' + timeWritten + '</td><td>' + type + '</td><td>' + message + '</td></tr>');
+						items.push('<tr><th>Computer Name</th><th>Event Log</th><th>Source</th><th>User</th><th>Time Written</th><th>Type</th><th>Message</th></tr>');
+						$.each(jsonResult['data'], function(key, val) {
+							items.push('<tr><td>' + val[0] + '</td><td>' +val[1] + '</td><td>' + val[2] + '</td><td>' + val[3] + '</td><td>' + val[4] + '</td><td>' + val[5] + '</td><td>' + val[6] + '</td></tr>');
 						});
+						$('#resultPane').empty();
 						$('<table/>', {
 							'id': 'resultTable',
 							html: items.join('')
