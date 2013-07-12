@@ -219,6 +219,12 @@ if ($formData['section'] == "eventLog")
 				$keys[] = "%" . $i;
 			}
 			$message = str_replace($keys, $iStrings, $row['messageTemplate']);
+			$delimiters = array
+			(
+				'%n' => "<br />",
+				'%t' => "&nbsp;&nbsp;&nbsp;&nbsp;"
+			)
+			$message = str_replace(array_keys($delimiters), $delimiters, $message);
 			$return[] = array(
 				$row['ComputerName'],
 				$row['eventLog'],
