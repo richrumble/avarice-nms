@@ -223,7 +223,7 @@ if ($formData['section'] == "eventLog")
 			(
 				'%n' => "<br />",
 				'%t' => "&nbsp;&nbsp;&nbsp;&nbsp;"
-			)
+			);
 			$message = str_replace(array_keys($delimiters), $delimiters, $message);
 			$return[] = array(
 				$row['ComputerName'],
