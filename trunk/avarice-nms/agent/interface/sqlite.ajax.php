@@ -191,6 +191,22 @@ if ($formData['section'] == "eventLog")
 			$query = substr($query, 0, -1) . "
 				)";
 		}
+		if (!empty($formData['searchString']))
+		{
+			$query .= "
+				and
+				(
+					i.InsertionString like '%" . $formData['searchString'] . "%'
+					or m.messageTemplate like '%" . $formData['searchString'] . "%'
+				)";
+		}
+		$query .= "
+			limit 2000";
+		if (!empty($formData['offset']))
+		{
+			$query .="
+			offset " . ($formData['offset'] * 2000);
+		}
 		$sth = $dbh->prepare($query);
 		$sth->execute();
 		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
