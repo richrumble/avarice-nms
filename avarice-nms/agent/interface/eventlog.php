@@ -6,6 +6,7 @@
 		<form id = "mainForm">
 			<input type = "hidden" name = "section" value = "eventLog" />
 			<input type = "hidden" name = "action" value = "logSearch" />
+			<input id = "offset-value" type = "hidden" name = "offset" value = 0 />
 			<div id = "selectBoxes"></div>
 			<script type = "text/javascript">
 				$.getJSON('sqlite.ajax.php?section=eventLog&action=getUser', function(jsonResult) {
@@ -69,12 +70,13 @@
 					}).appendTo('#selectBoxes');
 				});
 			</script>
-			<input size = 30 type = "text" id = "searchString" name = "searchString" onkeyup=""/>
+			<input size = 30 type = "text" id = "searchString" name = "searchString" placeholder = "Search String" /><br />
+			Results per page: <input type = "radio" name = "limit" value = "50" checked /> 50 <input type = "radio" name = "limit" value = "100" /> 100 <input type = "radio" name = "limit" value = "500" /> 500 <input type = "radio" name = "limit" value = "1000" /> 1,000<br />
 			<input type = "submit" value = "clickme" />
 		</form>
 		<script type = "text/javascript">
 			var timerid;
-			jQuery("#searchString").keyup(function(){
+			$("#searchString").keyup(function(){
 				clearTimeout(timerid);
 				timerid = setTimeout(function() { $('#mainForm').submit(); }, 500);
 			});
@@ -91,6 +93,7 @@
 						$.each(jsonResult['data'], function(key, val) {
 							items.push('<tr><td>' + val[0] + '</td><td>' +val[1] + '</td><td>' + val[2] + '</td><td>' + val[3] + '</td><td>' + val[4] + '</td><td>' + val[5] + '</td><td>' + val[6] + '</td></tr>');
 						});
+						$('#paginationPane').show()
 						$('#resultPane').empty();
 						$('<table/>', {
 							'id': 'resultTable',
@@ -98,6 +101,28 @@
 						}).appendTo('#resultPane');
 					}
 				});
+				return false;
+			});
+		</script>
+		<div id = "paginationPane" style = "display: none;">
+			<a href = "#" class = "previous" data-action = "previous">&lt;</a>
+			<input id = "pagination-page" type = "text" size = 1 value = 1 readonly />
+			<a href = "#" class = "next" data-action = "next">&gt;</a>
+		</div>
+		<script type = "text/javascript">
+			$("div#paginationPane a").click(function(){
+				if (($(this).attr('class') == "previous") && (parseInt($("#pagination-page").attr('value')) > 1))
+				{
+					$("#pagination-page").attr('value', parseInt($("#pagination-page").attr('value')) - 1);
+					$("#offset-value").attr('value', parseInt($("#offset-value").attr('value')) - 1);
+					$('#mainForm').submit();
+				}
+				else if ($(this).attr('class') == "next")
+				{
+					$("#pagination-page").attr('value', parseInt($("#pagination-page").attr('value')) + 1);
+					$("#offset-value").attr('value', parseInt($("#offset-value").attr('value')) + 1);
+					$('#mainForm').submit();
+				}
 				return false;
 			});
 		</script>
