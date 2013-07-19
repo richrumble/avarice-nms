@@ -201,7 +201,7 @@ if ($formData['section'] == "eventLog")
 				)";
 		}
 		$query .= "
-			limit 2000";
+			limit " . $formData['limit'];
 		if (!empty($formData['offset']))
 		{
 			$query .="
