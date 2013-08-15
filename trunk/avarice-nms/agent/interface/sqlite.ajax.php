@@ -200,12 +200,10 @@ if ($formData['section'] == "eventLog")
 					or m.messageTemplate like '%" . $formData['searchString'] . "%'
 				)";
 		}
-		$query .= "
-			limit " . $formData['limit'];
-		if (!empty($formData['offset']))
+		if (empty($formData['fullResultSet']))
 		{
-			$query .="
-			offset " . ($formData['offset'] * 2000);
+			$query .= "
+				limit " . $formData['limit'];
 		}
 		$sth = $dbh->prepare($query);
 		$sth->execute();
