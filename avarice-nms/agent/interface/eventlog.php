@@ -7,17 +7,18 @@
 			<input type = "hidden" name = "section" value = "eventLog" />
 			<input type = "hidden" name = "action" value = "logSearch" />
 			<input id = "offset-value" type = "hidden" name = "offset" value = 0 />
+			<input id = "maxPage" type = "hidden" name = "maxPage" value = 0 />
 			<div id = "selectBoxes"></div>
 			<input size = 30 type = "text" id = "searchString" name = "searchString" placeholder = "Search String" /><br />
 			Results per page: <input type = "radio" name = "limit" value = "50" checked /> 50 <input type = "radio" name = "limit" value = "100" /> 100 <input type = "radio" name = "limit" value = "500" /> 500 <input type = "radio" name = "limit" value = "1000" /> 1,000<br />
 			<input type = "submit" value = "clickme" />
 		</form>
 		<div id = "paginationPane" style = "display: none;">
-			<a href = "#" class = "first" data-action = "first">&lt;&lt;</a>
-			<a href = "#" class = "previous" data-action = "previous">&lt;</a>
+			<a href = "#" class = "first">&lt;&lt;</a>
+			<a href = "#" class = "previous">&lt;</a>
 			<input id = "pagination-page" type = "text" size = 1 value = 1 readonly />
-			<a href = "#" class = "next" data-action = "next">&gt;</a>
-			<a href = "#" class = "last" data-action = "last">&gt;&gt;</a>
+			<a href = "#" class = "next">&gt;</a>
+			<a href = "#" class = "last">&gt;&gt;</a>
 		</div>
 		<div id = "resultPane"></div>
 		<script type = "text/javascript">
@@ -113,6 +114,7 @@
 					dataType: 'json',
 					success: function(jsonResult){
 						fullResltSet = jsonResult['data'];
+						$("#maxPage").attr("value", Math.floor(fullResltSet.length / parseInt($('input:radio[name=limit]:checked').val())));
 						$('#paginationPane').show();
 					}
 				});
@@ -148,7 +150,7 @@
 					$("#offset-value").attr('value', parseInt($("#offset-value").attr('value')) - 1);
 					resultPopulation(fullResltSet.slice(parseInt($("#offset-value").attr('value')) * parseInt($('input:radio[name=limit]:checked').val()), (parseInt($("#offset-value").attr('value')) + 1) * parseInt($('input:radio[name=limit]:checked').val())));
 				}
-				else if (($(this).attr('class') == "next") && (parseInt($("#pagination-page").attr('value')) >= (parseInt($("#maxPage").attr('value')) - 1)))
+				else if (($(this).attr('class') == "next") && (parseInt($("#pagination-page").attr('value')) < (parseInt($("#maxPage").attr('value')))))
 				{
 					$("#pagination-page").attr('value', parseInt($("#pagination-page").attr('value')) + 1);
 					$("#offset-value").attr('value', parseInt($("#offset-value").attr('value')) + 1);
