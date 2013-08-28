@@ -104,6 +104,8 @@
 					data: formData,
 					dataType: 'json',
 					success: function(jsonResult){
+						$("#pagination-page").attr('value', 1);
+						$("#offset-value").attr('value', 0);
 						resultPopulation(jsonResult['data'])
 					}
 				});
