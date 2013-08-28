@@ -383,7 +383,7 @@ foreach ($logfiles_array as $logfileID => $logfilename)
 					$insertionStrings[] = $oiv;
 				}
 			}
-			$norm_query .= trim(str_replace("'", "''", implode(",", $insertionStrings))) . "'); ";
+			$norm_query .= trim(str_replace("'", "''", implode("|@|", $insertionStrings))) . "'); ";
 			if ($x >= $batchsize)
 			{
 				$dbh->exec($norm_query .= " COMMIT;");
@@ -425,7 +425,7 @@ foreach ($logfiles_array as $logfileID => $logfilename)
 								InsertionStringID
 							FROM InsertionString
 							WHERE
-								InsertionString = '" . trim(str_replace("'", "''", implode(",", $insertionStrings))) . "'
+								InsertionString = '" . trim(str_replace("'", "''", implode("|@|", $insertionStrings))) . "'
 						)
 					);";
 			if ($x < $batchsize)

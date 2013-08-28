@@ -210,7 +210,7 @@ if ($formData['section'] == "eventLog")
 		$result = $sth->fetchAll(PDO::FETCH_ASSOC);
 		foreach($result as $row)
 		{
-			$iStrings = explode(",", $row['InsertionString']);
+			$iStrings = explode("|@|", $row['InsertionString']);
 			$keys = array();
 			for ($i = 1; $i <= count($iStrings); $i++)
 			{
