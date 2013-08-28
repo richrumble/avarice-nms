@@ -100,6 +100,7 @@ if ($firstRun == 0)
 		(
 			sourceID INTEGER PRIMARY KEY,
 			source TEXT,
+			sourceName TEXT,
 			createdDate TEXT
 		);
 		CREATE TABLE upload
@@ -152,6 +153,21 @@ foreach ($regarray as $log => $sources)
 					}
 					$messageFiles[$log][$source][] = $data['value'];
 				}
+				else if ($key == 'providerGUID' and !empty($data['value']))
+				{
+					$providerArray = Win32RegistryIterator($o_Win32Registry = new COM('winmgmts://./root/default:StdRegProv'), HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WINEVT\\Publishers\\' . $data['value']);
+					foreach ($providerArray as $pkey => $pvalue)
+					{
+						if ($pkey == '(Default)')
+						{
+							$messageFiles[$log][$source]['sourceName'] = $data['value'];
+						}
+						if ($pkey == 'MessageFileName')
+						{
+							$messageFiles[$log][$source][] = $data['value'];
+						}
+					}
+				}
 			}
 		}
 	}
@@ -195,112 +211,126 @@ foreach($messageFiles as $el => $sources)
 		$sourceID = $result['sourceID'];
 		if (empty($sourceID))
 		{
-			$insertQuery = "
-				insert into source
-					(source, createdDate)
-				values
-					('" . $source . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
+			if (empty($files['sourceName']))
+			{
+				$insertQuery = "
+					insert into source
+						(source, createdDate)
+					values
+						('" . $source . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
+			}
+			else
+			{
+				$insertQuery = "
+					insert into source
+						(source, sourceName, createdDate)
+					values
+						('" . $source . "', '" . $files['sourceName'] . "', '" . date('Y-m-d H:i:s', $runTimeEvent) . "');";
+			}
 			$dbh->exec($insertQuery);
 			$result = $dbh->query($query)->fetch();
 			$sourceID = $result['sourceID'];
 		}
-		foreach ($files as $filel)
+		foreach ($files as $fkey => $filel)
 		{
-			$filelist = explode(";", $filel);
-			foreach ($filelist as $file)
+			if ($fkey != 'sourceName')
 			{
-				unset($output);
-				$file = str_ireplace(array("%systemroot%", "%programfiles%"), array(getenv('SYSTEMROOT'), getenv('PROGRAMFILES')), $file);
-				if (!is_file($file) and !is_file(getenv('SYSTEMROOT') . "\\system32\\" . $file))
+				$filelist = explode(";", $filel);
+				foreach ($filelist as $file)
 				{
-					continue;
-				}
-				else if (!is_file($file))
-				{
-					$file = getenv('SYSTEMROOT') . "\\system32\\" . $file;
-				}
-				// Use this info to see if file already exists in DB
-				$mf_filename = substr(strrchr($file, "\\"), 1);
-				$objFolder = $objShell->Namespace(substr($file, 0, strrpos($file, "\\")));
-				$fileVersion = $objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 156);
-				$productVersion = $objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 271);
-				$fileModified = date('Y-m-d H:i:s', strtotime($objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 3)));
-				$fileCreated = date('Y-m-d H:i:s', strtotime($objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 4)));
-				$file_hash = hash_file("md5", $file);
-				$query = "
-					select
-						messageFileID
-					from
-						messageFile
-					where
-						file = '" . $mf_filename . "'
-						and fileVersion = '" . $fileVersion . "'
-						and productVersion = '" . $productVersion . "'
-						and fileModified = '" . $fileModified . "'
-						and fileHash = '" . $file_hash . "';";
-				$result = $dbh->query($query)->fetch();
-				$messageFileID = $result['messageFileID'];
-				// if file !exists use wrcinfo.exe to get messages
-				if (empty($messageFileID))
-				{
-					$insertQuery = "
-						insert into messageFile
-							(file, fileVersion, productVersion, fileCreated, fileModified, createdDate, fileHash)
-						values
-							('" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
-					$dbh->exec($insertQuery);
+					unset($output);
+					$file = str_ireplace(array("%systemroot%", "%programfiles%"), array(getenv('SYSTEMROOT'), getenv('PROGRAMFILES')), $file);
+					if (!is_file($file) and !is_file(getenv('SYSTEMROOT') . "\\system32\\" . $file))
+					{
+						continue;
+					}
+					else if (!is_file($file))
+					{
+						$file = getenv('SYSTEMROOT') . "\\system32\\" . $file;
+					}
+					// Use this info to see if file already exists in DB
+					$mf_filename = substr(strrchr($file, "\\"), 1);
+					$objFolder = $objShell->Namespace(substr($file, 0, strrpos($file, "\\")));
+					$fileVersion = $objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 156);
+					$productVersion = $objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 271);
+					$fileModified = date('Y-m-d H:i:s', strtotime($objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 3)));
+					$fileCreated = date('Y-m-d H:i:s', strtotime($objFolder->GetDetailsOf($objFolder->ParseName($mf_filename), 4)));
+					$file_hash = hash_file("md5", $file);
+					$query = "
+						select
+							messageFileID
+						from
+							messageFile
+						where
+							file = '" . $mf_filename . "'
+							and fileVersion = '" . $fileVersion . "'
+							and productVersion = '" . $productVersion . "'
+							and fileModified = '" . $fileModified . "'
+							and fileHash = '" . $file_hash . "';";
 					$result = $dbh->query($query)->fetch();
 					$messageFileID = $result['messageFileID'];
-					exec("wrcinfo.exe \"" . $file . "\"", $output);
-					$templateLineIDs = array();
-					foreach ($output as $k => $v)
+					// if file !exists use wrcinfo.exe to get messages
+					if (empty($messageFileID))
 					{
-						if (stripos($v, "Msg-Template:") !== false)
-						{
-							$templateLineIDs[] = $k;
-						}
-					}
-					foreach ($templateLineIDs as $templateLineID)
-					{
-						#messageFileID, identifier, messageTemplate, jenkins1, jenkins2
-						$identifier = substr($output[$templateLineID - 1], 8);
-						$messageTemplate = substr($output[$templateLineID], 14);
-						$x = 1;
-						while (substr($output[$templateLineID + $x], 0, 14) != "Template-Hash:")
-						{
-							$messageTemplate += "
-" . $output[$templateLineID + $x];
-							$x++;
-						}
-						$messageTemplate = str_replace("'", "''", $messageTemplate);
-						$jenks = substr($output[$templateLineID + $x], 15);
-						list($jenkins1, $jenkins2) = explode(",", $jenks);
 						$insertQuery = "
-							insert into message
-								(messageFileID, identifier, messageTemplate, jenkins1, jenkins2)
+							insert into messageFile
+								(file, fileVersion, productVersion, fileCreated, fileModified, createdDate, fileHash)
 							values
-								('" . $result['messageFileID'] . "', '" . $identifier . "', '" . $messageTemplate . "', '" . $jenkins1 . "', '" . $jenkins2 . "');";
+								('" . $mf_filename . "','" . $fileVersion . "','" . $productVersion . "','" . $fileCreated . "','" . $fileModified . "','" . date('Y-m-d H:i:s', $runTimeEvent) . "','" . $file_hash . "');";
 						$dbh->exec($insertQuery);
+						$result = $dbh->query($query)->fetch();
+						$messageFileID = $result['messageFileID'];
+						exec("wrcinfo.exe \"" . $file . "\"", $output);
+						$templateLineIDs = array();
+						foreach ($output as $k => $v)
+						{
+							if (stripos($v, "Msg-Template:") !== false)
+							{
+								$templateLineIDs[] = $k;
+							}
+						}
+						foreach ($templateLineIDs as $templateLineID)
+						{
+							#messageFileID, identifier, messageTemplate, jenkins1, jenkins2
+							$identifier = substr($output[$templateLineID - 1], 8);
+							$messageTemplate = substr($output[$templateLineID], 14);
+							$x = 1;
+							while (substr($output[$templateLineID + $x], 0, 14) != "Template-Hash:")
+							{
+								$messageTemplate += "
+" . $output[	$templateLineID + $x];
+								$x++;
+							}
+							$messageTemplate = str_replace("'", "''", $messageTemplate);
+							$jenks = substr($output[$templateLineID + $x], 15);
+							list($jenkins1, $jenkins2) = explode(",", $jenks);
+							$insertQuery = "
+								insert into message
+									(messageFileID, identifier, messageTemplate, jenkins1, jenkins2)
+								values
+									('" . $result['messageFileID'] . "', '" . $identifier . "', '" . $messageTemplate . "', '" . $jenkins1 . "', '" . $jenkins2 . "');";
+							$dbh->exec($insertQuery);
+						}
 					}
-				}
-				$query = "
-					select
-						count(*) as 'Count'
-					from eventLogSourceFile
-					where
-						eventLogID = " . $eventLogID . "
-						and sourceID = " . $sourceID . "
-						and messageFileID = " . $messageFileID . ";";
-				$result = $dbh->query($query)->fetch();
-				if ($result['Count'] < 1)
-				{
-					$insertQuery = "
-						insert into eventLogSourceFile
-							(eventLogID, sourceID, messageFileID)
-						values
-							(" . $eventLogID . ", " . $sourceID . ", " . $messageFileID . ");";
-					$dbh->exec($insertQuery);
+					$query = "
+						select
+							count(*) as 'Count'
+						from eventLogSourceFile
+						where
+							eventLogID = " . $eventLogID . "
+							and sourceID = " . $sourceID . "
+							and messageFileID = " . $messageFileID . ";";
 					$result = $dbh->query($query)->fetch();
+					if ($result['Count'] < 1)
+					{
+						$insertQuery = "
+							insert into eventLogSourceFile
+								(eventLogID, sourceID, messageFileID)
+							values
+								(" . $eventLogID . ", " . $sourceID . ", " . $messageFileID . ");";
+						$dbh->exec($insertQuery);
+						$result = $dbh->query($query)->fetch();
+					}
 				}
 			}
 		}
