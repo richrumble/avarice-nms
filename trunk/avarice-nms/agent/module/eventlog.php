@@ -160,11 +160,11 @@ foreach ($regarray as $log => $sources)
 					{
 						if ($pkey == '(Default)')
 						{
-							$messageFiles[$log][$source]['sourceName'] = $data['value'];
+							$messageFiles[$log][$source]['sourceName'] = $pvalue['value'];
 						}
 						if ($pkey == 'MessageFileName')
 						{
-							$messageFiles[$log][$source][] = $data['value'];
+							$messageFiles[$log][$source][] = $pvalue['value'];
 						}
 					}
 				}
