@@ -153,7 +153,7 @@ foreach ($regarray as $log => $sources)
 					}
 					$messageFiles[$log][$source][] = $data['value'];
 				}
-				else if ($key == 'providerGUID' and !empty($data['value']))
+				else if ($key == 'providerGuid' and !empty($data['value']))
 				{
 					$providerArray = Win32RegistryIterator($o_Win32Registry = new COM('winmgmts://./root/default:StdRegProv'), HKEY_LOCAL_MACHINE, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\WINEVT\\Publishers\\' . $data['value']);
 					foreach ($providerArray as $pkey => $pvalue)
